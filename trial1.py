@@ -6,6 +6,7 @@ import io
 import pdf2image
 import google.generativeai as genai
 import fitz  # PyMuPDF
+import tempfile  # For handling temporary file creation
 import re
 
 # Load environment variables
@@ -16,7 +17,13 @@ genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
 def input_pdf_setup(uploaded_file):
     pdf_parts = []
     try:
-        doc = fitz.open(io.BytesIO(uploaded_file))  # Open PDF from bytes
+        # Save the uploaded file as a temporary file
+        with tempfile.NamedTemporaryFile(delete=False) as tmp_file:
+            tmp_file.write(uploaded_file)
+            tmp_file_path = tmp_file.name
+
+        # Open the temporary PDF file with PyMuPDF
+        doc = fitz.open(tmp_file_path)
         for page in doc:
             pix = page.get_pixmap()  # Convert page to image
             img_byte_arr = io.BytesIO()
@@ -25,10 +32,16 @@ def input_pdf_setup(uploaded_file):
                 "mime_type": "image/png",  # Using PNG format
                 "data": base64.b64encode(img_byte_arr.getvalue()).decode()
             })
+        
+        # Clean up the temporary file
+        os.remove(tmp_file_path)
+
     except Exception as e:
         st.error(f"Error processing PDF: {str(e)}")
+    
     if not pdf_parts:
         st.error("No pages found in the PDF.")
+    
     return pdf_parts
 
 # Function to get Gemini API response
@@ -51,7 +64,7 @@ submit3 = st.button("Percentage Match")
 input_prompt1 = """
 first of give information like NAME; email; qulification; experince ; from the resumes .and then asum
 You are an experienced Technical Human Resource Manager And Review each provided resume against the job description.
-Please provide a professional evaluation, including strengths, weaknesses, and alignment with the role. and all evalution should be in one or two line ."""
+Please provide a professional evaluation, including strengths, weaknesses, and alignment with the role. and all evalution should be in one or two line."""
 
 input_prompt3 = """
 You are a skilled ATS (Applicant Tracking System) scanner. Evaluate each resume against the job description.
