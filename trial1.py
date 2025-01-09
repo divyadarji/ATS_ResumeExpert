@@ -60,7 +60,7 @@ You are a skilled ATS (Applicant Tracking System) scanner. Evaluate each resume 
 Provide a percentage match, list missing keywords, and offer final thoughts. and all evalution should be in one or two line.
 """
 
-if uploaded_file is not None:
+if uploaded_files is not None:
     # Print the uploaded file details for debugging
     st.write(f"File name: {uploaded_file.name}")
     st.write(f"File type: {uploaded_file.type}")
