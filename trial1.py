@@ -14,22 +14,26 @@ import fitz
 load_dotenv()
 genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
 
+
 def input_pdf_setup(uploaded_file):
     pdf_parts = []
-    # Read the uploaded file correctly as bytes
-    uploaded_file_bytes = uploaded_file.getvalue()  # Correct way to get bytes from Streamlit file uploader
-    doc = fitz.open(io.BytesIO(uploaded_file_bytes))  # Open PDF from bytes
+    if uploaded_file is not None:
+        # Read the file as bytes
+        uploaded_file_bytes = uploaded_file.getvalue()  # Get the byte content of the file
+        doc = fitz.open(io.BytesIO(uploaded_file_bytes))  # Open PDF from bytes
 
-    for page_num in range(len(doc)):
-        page = doc.load_page(page_num)  # Load a specific page
-        img = page.get_pixmap()  # Get an image representation of the page
-        img_byte_arr = io.BytesIO(img.tobytes())  # Convert to bytes
-        pdf_parts.append({
-            "mime_type": "image/jpeg",
-            "data": base64.b64encode(img_byte_arr.getvalue()).decode()
-        })
+        for page_num in range(len(doc)):
+            page = doc.load_page(page_num)  # Load a specific page
+            img = page.get_pixmap()  # Get an image representation of the page
+            img_byte_arr = io.BytesIO(img.tobytes())  # Convert to bytes
+            pdf_parts.append({
+                "mime_type": "image/jpeg",
+                "data": base64.b64encode(img_byte_arr.getvalue()).decode()
+            })
+    else:
+        st.write("No file uploaded!")
+    
     return pdf_parts
-
 # Get Gemini API response
 def get_gemini_response(input, pdf_content, prompt):
     model = genai.GenerativeModel('gemini-1.5-flash')
@@ -55,6 +59,14 @@ input_prompt3 = """
 You are a skilled ATS (Applicant Tracking System) scanner. Evaluate each resume against the job description.
 Provide a percentage match, list missing keywords, and offer final thoughts. and all evalution should be in one or two line.
 """
+
+if uploaded_file is not None:
+    # Print the uploaded file details for debugging
+    st.write(f"File name: {uploaded_file.name}")
+    st.write(f"File type: {uploaded_file.type}")
+    uploaded_file_bytes = uploaded_file.getvalue()
+else:
+    st.write("No file uploaded.")
 
 if submit1 and uploaded_files:
     st.subheader("Resume Summaries")
