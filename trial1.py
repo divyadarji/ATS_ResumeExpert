@@ -13,22 +13,6 @@ import re
 load_dotenv()
 genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
 
-# Function to extract structured information from PDF
-# def extract_pdf_info(pdf_content):
-#     reader = PdfReader(io.BytesIO(pdf_content))
-#     text = " ".join([page.extract_text() for page in reader.pages])
-    
-#     # Extract structured information using regex
-#     info = {
-#         "Name": re.search(r"Name\s*:\s*([^\n]+)", text, re.IGNORECASE),
-#         "Qualification": re.search(r"Qualification\s*:\s*([^\n]+)", text, re.IGNORECASE),
-#         "College Name": re.search(r"College\s*:\s*([^\n]+)", text, re.IGNORECASE),
-#         "Experience": re.search(r"Experience\s*:\s*([^\n]+)", text, re.IGNORECASE),
-#         "Email": re.search(r"Email\s*:\s*([\w\.-]+@[\w\.-]+)", text, re.IGNORECASE),
-#     }
-#     return {key: (match.group(1) if match else "Not Found") for key, match in info.items()}
-
-# Convert PDF to images for Gemini API
 def input_pdf_setup(uploaded_file):
     pdf_parts = []
     images = pdf2image.convert_from_bytes(uploaded_file)
