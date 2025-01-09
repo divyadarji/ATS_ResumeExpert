@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ATS Resume Expert</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        #loader {
+            display: none;
+            text-align: center;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+
+<body>
+<div class="container mt-5">
+    <h1 class="text-center">ATS Resume Expert</h1>
+    <form id="resumeForm" method="POST" enctype="multipart/form-data">
+        <!-- <div class="mb-3">
+            <label for="jobDescription" class="form-label">Job Description</label>
+            <textarea class="form-control" id="jobDescription" name="job_description" rows="4"></textarea>
+        </div> -->
+        <div class="mb-3">
+            <label for="resumes" class="form-label">Upload Resumes (PDF)</label>
+            <input type="file" class="form-control" id="resumes" name="resumes" accept=".pdf" multiple required>
+        </div>
+        <div class="mb-3 text-center">
+            <button type="button" class="btn btn-primary me-2" id="summarizeButton">Summarize Resumes</button>
+            <!-- <button type="button" class="btn btn-secondary" id="matchButton">Percentage Match</button> -->
+        </div>
+    </form>
+    <div id="loader">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+        <p>Processing... Please wait.</p>
+    </div>
+    <div id="results" class="mt-4"></div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+<script>
+    const form = document.getElementById('resumeForm');
+    const summarizeButton = document.getElementById('summarizeButton');
+    // const matchButton = document.getElementById('matchButton');
+    const loader = document.getElementById('loader');
+    const resultsDiv = document.getElementById('results');
+
+    summarizeButton.onclick = () => submitForm('summarize');
+    // matchButton.onclick = () => submitForm('match');
+
+    const submitForm = async (action) => {
+        const formData = new FormData(form);
+        formData.append('action', action);
+        // const jobDescription = document.getElementById('jobDescription').value.trim();
+
+        // if (action === 'match' && !jobDescription) {
+        //     alert('Job description is required for Percentage Match.');
+        //     return;
+        // }
+
+        resultsDiv.innerHTML = '';
+        loader.style.display = 'block';
+
+        try {
+            const response = await axios.post('/process_resumes', formData, {
+                headers: { 'Content-Type': 'multipart/form-data' },
+            });
+            const results = response.data;
+            let output = '<h2>Results</h2>';
+            results.forEach(res => {
+                output += `<div class="mb-3">
+                    <h4>${res.filename}</h4>
+                    <ul>
+                        <li><strong>Name:</strong> ${res.name || 'N/A'}</li>
+                        <li><strong>Email:</strong> ${res.email || 'N/A'}</li>
+                        <li><strong>Qualification:</strong> ${res.qualification || 'N/A'}</li>
+                        <li><strong>Experience:</strong> ${res.experience || 'N/A'}</li>
+                        <li><strong>Skills:</strong> ${res.skills || 'N/A'}</li>
+                    </ul>
+                    <strong>Professional Evaluation:</strong>
+                    <p>${res.evaluation || 'N/A'}</p>
+                </div>`;
+            });
+            resultsDiv.innerHTML = output;
+        } catch (err) {
+            alert('Error processing resumes');
+        } finally {
+            loader.style.display = 'none';
+        }
+    };
+</script>
+</body>
+</html>
