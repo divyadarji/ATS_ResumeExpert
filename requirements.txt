@@ -5,3 +5,4 @@ pdf2image
 PyPDF2
 PyMuPDF
 pdfplumber
+Flask
