@@ -8,7 +8,6 @@ import pdf2image
 import google.generativeai as genai
 from PyPDF2 import PdfReader
 import re
-import fitz
 
 # Load environment variables
 load_dotenv()
@@ -17,23 +16,16 @@ genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
 
 def input_pdf_setup(uploaded_file):
     pdf_parts = []
-    if uploaded_file is not None:
-        # Read the file as bytes
-        uploaded_file_bytes = uploaded_file.getvalue()  # Get the byte content of the file
-        doc = fitz.open(io.BytesIO(uploaded_file_bytes))  # Open PDF from bytes
-
-        for page_num in range(len(doc)):
-            page = doc.load_page(page_num)  # Load a specific page
-            img = page.get_pixmap()  # Get an image representation of the page
-            img_byte_arr = io.BytesIO(img.tobytes())  # Convert to bytes
-            pdf_parts.append({
-                "mime_type": "image/jpeg",
-                "data": base64.b64encode(img_byte_arr.getvalue()).decode()
-            })
-    else:
-        st.write("No file uploaded!")
-    
+    images = pdf2image.convert_from_bytes(uploaded_file)
+    for page in images:
+        img_byte_arr = io.BytesIO()
+        page.save(img_byte_arr, format='JPEG')
+        pdf_parts.append({
+            "mime_type": "image/jpeg",
+            "data": base64.b64encode(img_byte_arr.getvalue()).decode()
+        })
     return pdf_parts
+
 # Get Gemini API response
 def get_gemini_response(input, pdf_content, prompt):
     model = genai.GenerativeModel('gemini-1.5-flash')
@@ -60,14 +52,6 @@ You are a skilled ATS (Applicant Tracking System) scanner. Evaluate each resume 
 Provide a percentage match, list missing keywords, and offer final thoughts. and all evalution should be in one or two line.
 """
 
-if uploaded_files is not None:
-    # Print the uploaded file details for debugging
-    st.write(f"File name: {uploaded_file.name}")
-    st.write(f"File type: {uploaded_file.type}")
-    uploaded_file_bytes = uploaded_file.getvalue()
-else:
-    st.write("No file uploaded.")
-
 if submit1 and uploaded_files:
     st.subheader("Resume Summaries")
     for uploaded_file in uploaded_files:
@@ -78,7 +62,7 @@ if submit1 and uploaded_files:
         
         st.markdown(f"### {uploaded_file.name}")
         # st.json(structured_info)
-        # st.write("**Gemini Response:**")
+        st.write("**Gemini Response:**")
         st.write(response)
 
 elif submit3 and uploaded_files:
