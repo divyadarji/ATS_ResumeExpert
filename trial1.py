@@ -13,6 +13,7 @@ import re
 load_dotenv()
 genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
 
+
 def input_pdf_setup(uploaded_file):
     pdf_parts = []
     images = pdf2image.convert_from_bytes(uploaded_file)
@@ -61,7 +62,7 @@ if submit1 and uploaded_files:
         
         st.markdown(f"### {uploaded_file.name}")
         # st.json(structured_info)
-        # st.write("**Gemini Response:**")
+        st.write("**Gemini Response:**")
         st.write(response)
 
 elif submit3 and uploaded_files:
