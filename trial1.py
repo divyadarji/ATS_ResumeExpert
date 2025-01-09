@@ -6,13 +6,14 @@ import io
 from PIL import Image
 import pdf2image
 import google.generativeai as genai
-from PyPDF2 import PdfReader
-import re
+# from PyPDF2 import PdfReader
+# import re
 
 # Load environment variables
 load_dotenv()
 genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
 
+# Function to extract structured information from PDF
 
 def input_pdf_setup(uploaded_file):
     pdf_parts = []
