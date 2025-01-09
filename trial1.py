@@ -14,10 +14,10 @@ import fitz
 load_dotenv()
 genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
 
-
 def input_pdf_setup(uploaded_file):
     pdf_parts = []
-    doc = fitz.open(io.BytesIO(uploaded_file))  # Open PDF from bytes
+    uploaded_file_bytes = uploaded_file.read()  # Read the file as bytes
+    doc = fitz.open(io.BytesIO(uploaded_file_bytes))  # Open PDF from bytes
 
     for page_num in range(len(doc)):
         page = doc.load_page(page_num)  # Load a specific page
