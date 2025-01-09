@@ -16,7 +16,8 @@ genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
 
 def input_pdf_setup(uploaded_file):
     pdf_parts = []
-    uploaded_file_bytes = uploaded_file.read()  # Read the file as bytes
+    # Read the uploaded file correctly as bytes
+    uploaded_file_bytes = uploaded_file.getvalue()  # Correct way to get bytes from Streamlit file uploader
     doc = fitz.open(io.BytesIO(uploaded_file_bytes))  # Open PDF from bytes
 
     for page_num in range(len(doc)):
