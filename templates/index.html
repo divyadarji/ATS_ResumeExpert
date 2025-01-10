@@ -5,21 +5,17 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ATS Resume Expert</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <style>
-        #loader {
-            display: none;
-            text-align: center;
-            margin-top: 20px;
-        }
-    </style>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    <link href="/static/style.css" rel="stylesheet">
+       
 </head>
 <body>
-<div class="container mt-5">
-    <h1 class="text-center">ATS Resume Expert</h1>
+<div class="container">
+    <h1>ATS Resume Expert</h1>
     <form id="resumeForm" method="POST" enctype="multipart/form-data">
         <div class="mb-3">
             <label for="jobDescription" class="form-label">Job Description</label>
-            <textarea class="form-control" id="jobDescription" name="job_description" rows="4"></textarea>
+            <textarea class="form-control" id="jobDescription" name="job_description" rows="4" placeholder="Paste the job description here..."></textarea>
         </div>
         <div class="mb-3">
             <label for="resumes" class="form-label">Upload Resumes (PDF)</label>
@@ -36,7 +32,7 @@
         </div>
         <p>Processing... Please wait.</p>
     </div>
-    <div id="results" class="mt-4"></div>
+    <div id="results" class="results"></div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
@@ -63,6 +59,13 @@
 
             console.log("DEBUG: API Response Data:", response.data);
 
+            // Check for alert message from the response
+            if (response.data.alert) {
+                alert(response.data.alert);  // Display the alert message to the user
+                loader.style.display = 'none';  // Hide the loader
+                return;  // Stop further processing if an alert is shown
+            }
+
             const results = response.data;
             if (results.length === 0) {
                 resultsDiv.innerHTML = '<p>No results found.</p>';
@@ -73,7 +76,7 @@
             results.forEach(res => {
                 console.log("DEBUG: Processing Result:", res);
                 if (action === 'summarize') {
-                    output += `<div>
+                    output += `<div class="result-card">
                         <h4>${res.filename}</h4>
                         <p><strong>Name:</strong> ${res.name || 'N/A'}</p>
                         <p><strong>Email:</strong> ${res.email || 'N/A'}</p>
@@ -83,7 +86,7 @@
                         <p><strong>Professional Evaluation:</strong> ${res.evaluation || 'N/A'}</p>
                     </div>`;
                 } else if (action === 'match') {
-                    output += `<div>
+                    output += `<div class="result-card">
                         <h4>${res.filename}</h4>
                         <p><strong>Percentage Match:</strong> ${res.percentage_match || 'N/A'}</p>
                         <p><strong>Justification:</strong> ${res.justification || 'N/A'}</p>
@@ -99,6 +102,8 @@
             loader.style.display = 'none';
         }
     };
+
+   
 </script>
 </body>
 </html>

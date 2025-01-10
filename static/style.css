@@ -1,49 +1,87 @@
 body {
-    font-family: Arial, sans-serif;
-    margin: 0;
-    padding: 0;
-    text-align: center;
-    background-color: rgb(255, 255, 255);
-}
-
-h1 {
-    background-color: #4CAF50;
+    font-family: 'Poppins', sans-serif;
+    background: linear-gradient(135deg, #000000, #c5c9cf);
     color: white;
-    padding: 1em 0;
 }
-
-.menu a {
-    display: inline-block;
-    margin: 20px;
-    padding: 10px 20px;
-    text-decoration: none;
-    background-color: #f0f0f0;
-    border: 1px solid #ccc;
-    color: #ffffff;
-    border-radius: 5px;
+.container {
+    background: #ffffff;
+    padding: 30px;
+    border-radius: 8px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    margin-top: 50px;
 }
-
-.menu a:hover {
-    background-color: #ddd;
+h1 {
+    font-size: 2rem;
+    font-weight: 600;
+    text-align: center;
+    color: #6a11cb;
+    margin-bottom: 30px;
 }
-
-form {
+.form-label {
+    font-weight: 600;
+    color: #6a11cb;
+}
+.form-control {
+    border-radius: 10px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+.btn {
+    transition: background 0.3s ease;
+    border-radius: 25px;
+}
+.btn-primary {
+    background-color: #2575fc;
+}
+.btn-primary:hover {
+    background-color: #0056b3;
+    transform: translateY(-3px);
+}
+.btn-secondary {
+    background-color: #6a11cb;
+}
+.btn-secondary:hover {
+    background-color: #5a0a99;
+    transform: translateY(-3px);
+}
+#loader {
+    display: none;
+    text-align: center;
     margin-top: 20px;
 }
-
-textarea, input[type="file"], button {
-    margin: 10px 0;
+#loader .spinner-border {
+    animation: spin 2s linear infinite;
 }
-
-button {
-    background-color: #4CAF50;
-    color: white;
-    border: none;
-    padding: 10px 20px;
-    cursor: pointer;
-    border-radius: 5px;
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
 }
-
-button:hover {
-    background-color: #45a049;
+.results {
+    margin-top: 30px;
+}
+.result-card {
+    background: #f8f9fa;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    margin-bottom: 20px;
+    transition: transform 0.3s, box-shadow 0.3s;
+}
+.result-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+}
+.result-card h4 {
+    font-size: 1.2rem;
+    color: #2575fc;
+}
+.result-card p {
+    font-size: 1rem;
+    color: #333;
+}
+.form-control, .btn {
+    margin-bottom: 20px;
+}
+.form-control:focus {
+    border-color: #2575fc;
+    box-shadow: 0 0 5px rgba(37, 117, 252, 0.5);
 }
