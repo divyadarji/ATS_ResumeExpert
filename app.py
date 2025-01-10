@@ -89,6 +89,10 @@ def process_resumes():
     resumes = request.files.getlist("resumes")
     action = request.form["action"]
 
+    # Validate that job description is provided for "match" action
+    if action == "match" and not job_description:
+        return jsonify({"alert": "Job description is required to process matching action. Please provide a job description to proceed."}), 200
+
     prompts = {
         "summarize": """
         Please summarize the resume with the following details:
@@ -112,10 +116,11 @@ def process_resumes():
         pdf_parts = input_pdf_setup(resume)
         prompt = prompts["summarize"] if action == "summarize" else prompts["match"]
 
-        # Send job description only for "match"
+        # Pass job description only for "match" action
         job_input = job_description if action == "match" else ""
 
         try:
+            # Ensure job description is included in the API request for "match"
             response_text = get_gemini_response(job_input, pdf_parts, prompt)
             structured_data = parse_gemini_response(response_text, action=action)
         except Exception as e:
