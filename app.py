@@ -30,28 +30,44 @@ def input_pdf_setup(uploaded_file):
 
 # Parse Gemini API response
 def parse_gemini_response(response_text, action="summarize"):
-    """
-    Parse the Gemini response to extract structured data.
-    """
     try:
-        structured_data = {
-            "name": re.search(r"(?i)\bName:\s*(.+)", response_text).group(1) if re.search(r"(?i)\bName:\s*(.+)", response_text) else "N/A",
-            "email": re.search(r"(?i)\bEmail:\s*(.+)", response_text).group(1) if re.search(r"(?i)\bEmail:\s*(.+)", response_text) else "N/A",
-            "qualification": re.search(r"(?i)\bQualification:\s*(.+)", response_text).group(1) if re.search(r"(?i)\bQualification:\s*(.+)", response_text) else "N/A",
-            "experience": re.search(r"(?i)\bExperience:\s*(.+)", response_text).group(1) if re.search(r"(?i)\bExperience:\s*(.+)", response_text) else "N/A",
-            "skills": re.search(r"(?i)\bSkills:\s*(.+)", response_text).group(1) if re.search(r"(?i)\bSkills:\s*(.+)", response_text) else "N/A",
-        }
+        structured_data = {}
+        print("DEBUG: Raw Response Text (for match action):", response_text)  # Log the full response text
 
         if action == "match":
-            structured_data["percentage_match"] = re.search(r"(?i)\bPercentage match:\s*(.+)", response_text).group(1) if re.search(r"(?i)\bPercentage match:\s*(.+)", response_text) else "N/A"
-            structured_data["missing_keywords"] = re.search(r"(?i)\bMissing keywords:\s*(.+)", response_text).group(1) if re.search(r"(?i)\bMissing keywords:\s*(.+)", response_text) else "N/A"
+            # Relaxed regex pattern to handle leading hyphen and match percentage
+            percentage_match = re.search(r"(?i)\s*-?\s*Percentage\s*Match\s*[:\s]*([\d]+%)", response_text)
+            justification = re.search(r"(?i)\bJustification\s*[:\s]*(.*)", response_text)
 
-        evaluation_match = re.search(r"(?i)\bProfessional Evaluation:\s*(.+)", response_text)
-        structured_data["evaluation"] = evaluation_match.group(1).strip() if evaluation_match else "Evaluation not provided."
+            # Debugging: check if we captured anything
+            print("DEBUG: Found Percentage Match:", percentage_match)
+            print("DEBUG: Justification found:", justification)
+
+            if percentage_match:
+                structured_data["percentage_match"] = percentage_match.group(1).strip()
+            else:
+                structured_data["percentage_match"] = "N/A"
+                print("DEBUG: Percentage match regex did not capture anything.")
+
+            if justification:
+                structured_data["justification"] = justification.group(1).strip()
+            else:
+                structured_data["justification"] = "N/A"
+                print("DEBUG: Justification regex did not capture anything.")
+        else:
+            structured_data = {
+                "name": re.search(r"(?i)\bName:\s*(.+)", response_text).group(1).strip() if re.search(r"(?i)\bName:\s*(.+)", response_text) else "N/A",
+                "email": re.search(r"(?i)\bEmail:\s*(.+)", response_text).group(1).strip() if re.search(r"(?i)\bEmail:\s*(.+)", response_text) else "N/A",
+                "qualification": re.search(r"(?i)\bQualification:\s*(.+)", response_text).group(1).strip() if re.search(r"(?i)\bQualification:\s*(.+)", response_text) else "N/A",
+                "experience": re.search(r"(?i)\bExperience:\s*(.+)", response_text).group(1).strip() if re.search(r"(?i)\bExperience:\s*(.+)", response_text) else "N/A",
+                "skills": re.search(r"(?i)\bSkills:\s*(.+)", response_text).group(1).strip() if re.search(r"(?i)\bSkills:\s*(.+)", response_text) else "N/A",
+            }
+            evaluation_match = re.search(r"(?i)\bProfessional Evaluation:\s*(.+)", response_text)
+            structured_data["evaluation"] = evaluation_match.group(1).strip() if evaluation_match else "N/A"
 
         return structured_data
     except Exception as e:
-        raise ValueError(f"Error parsing response: {e}")
+        return {"error": f"Error parsing response: {e}"}
 
 # Get Gemini API response
 def get_gemini_response(input_text, pdf_content, prompt):
@@ -81,11 +97,13 @@ def process_resumes():
         - Qualification
         - Experience
         - Skills
-
-        assume that you are HR Exclude these details in the professional evaluation. Provide a concise 1-2 sentence analysis of unique strengths or achievements.
+        Provide a professional evaluation in 1-2 concise sentences at the end.
         """,
         "match": """
-       Please match the resume with the job description and provide the following details give answer in one or two
+        Given the resume and the job description, evaluate the match and provide:
+        - Percentage Match: [e.g., 80%]
+        - Justification: [1-2 concise sentences explaining the match percentage]
+        Ensure the response strictly follows this format.
         """
     }
 
@@ -108,7 +126,7 @@ def process_resumes():
                 "experience": "N/A",
                 "skills": "N/A",
                 "percentage_match": "N/A" if action == "match" else None,
-                "missing_keywords": "N/A" if action == "match" else None,
+                "justification": "N/A" if action == "match" else None,
                 "evaluation": str(e),
             }
 
