@@ -43,6 +43,10 @@ h1 {
     background-color: #5a0a99;
     transform: translateY(-3px);
 }
+.btn-success:hover {
+    background-color: #37990a;
+    transform: translateY(-3px);
+}
 
 #loader {
     display: none; /* Loader hidden initially */
