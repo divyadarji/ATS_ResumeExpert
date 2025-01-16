@@ -49,7 +49,14 @@
     let matchData = [];
 
     summarizeButton.onclick = () => submitForm('summarize');
-    matchButton.onclick = () => submitForm('match');
+    matchButton.onclick = () => {
+        const jobDescription = document.getElementById('jobDescription').value.trim();
+        if (!jobDescription) {
+            alert('Please provide a job description to perform percentage match.');
+            return;
+        }
+        submitForm('match');
+    };
 
     const submitForm = async (action) => {
         const formData = new FormData(document.getElementById('resumeForm'));
@@ -116,7 +123,6 @@
             });
         });
 
-        // If no summarized data, fallback to match data only
         const dataToExport = summarizedData.length > 0 ? combinedData : matchData;
 
         try {
@@ -139,5 +145,6 @@
         }
     };
 </script>
+
 </body>
 </html>
