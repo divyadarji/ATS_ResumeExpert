@@ -69,9 +69,9 @@
         const numberOfResumes = formData.getAll('resumes').length;
         let estimatedTime;
         if (action === 'summarize') {
-            estimatedTime = numberOfResumes * 4;  // 4 seconds per resume for summarizing
+            estimatedTime = numberOfResumes * 4; 
         } else if (action === 'match') {
-            estimatedTime = numberOfResumes * 3;  // 3 seconds per resume for percentage match
+            estimatedTime = numberOfResumes * 3;  
         }
 
         // Start the countdown
@@ -105,8 +105,8 @@
         let timeLeft = timeInSeconds;
 
         countdownInterval = setInterval(() => {
-            let minutes = Math.floor(timeLeft / 60);  // Calculate minutes
-            let seconds = timeLeft % 60;  // Calculate remaining seconds
+            let minutes = Math.floor(timeLeft / 60); 
+            let seconds = timeLeft % 60;  
 
             // Update the time display in minutes and seconds format
             timeRemainingElement.innerHTML = `Estimated Time Remaining: ${minutes} minute${minutes !== 1 ? 's' : ''} ${seconds} second${seconds !== 1 ? 's' : ''}`;
@@ -120,24 +120,28 @@
         }, 1000);
     };
 
+    const cleanText = (text) => {
+        return text ? text.replace(/\*\*/g, '').trim() : '';
+    };
 
     const displayResults = (results, action) => {
         let output = '<h2>Results</h2><ul class="list-group">';
+
         results.forEach((result) => {
             output += `<li class="list-group-item">
-                <strong>Filename:</strong> ${result.filename || "N/A"}<br>`;
+                <strong>Filename:</strong> ${cleanText(result.filename)}<br>`;
             if (action === 'summarize') {
                 output += `
-                    <strong>Name:</strong> ${result.name || "N/A"}<br>
-                    <strong>Email:</strong> ${result.email || "N/A"}<br>
-                    <strong>Qualification:</strong> ${result.qualification || "N/A"}<br>
-                    <strong>Experience:</strong> ${result.experience || "N/A"}<br>
-                    <strong>Skills:</strong> ${result.skills || "N/A"}<br>
-                    <strong>Evaluation:</strong> ${result.evaluation || "N/A"}<br>`;
+                    <strong>Name:</strong> ${cleanText(result.name)}<br>
+                    <strong>Email:</strong> ${cleanText(result.email)}<br>
+                    <strong>Qualification:</strong> ${cleanText(result.qualification)}<br>
+                    <strong>Experience:</strong> ${cleanText(result.experience)}<br>
+                    <strong>Skills:</strong> ${cleanText(result.skills)}<br>
+                    <strong>Evaluation:</strong> ${cleanText(result.evaluation)}<br>`;
             } else if (action === 'match') {
                 output += `
-                    <strong>Percentage Match:</strong> ${result.percentage_match || "N/A"}<br>
-                    <strong>Justification:</strong> ${result.justification || "N/A"}<br>`;
+                    <strong>Percentage Match:</strong> ${cleanText(result.percentage_match)}<br>
+                    <strong>Justification:</strong> ${cleanText(result.justification)}<br>`;
             }
             output += `</li>`;
         });
@@ -146,6 +150,23 @@
     };
 
     downloadCsvButton.onclick = async () => {
+        // Clean the summarized and match data before exporting
+        const cleanDataForCsv = (data) => {
+            return data.map((item) => {
+                return {
+                    filename: cleanText(item.filename),
+                    name: cleanText(item.name),
+                    email: cleanText(item.email),
+                    qualification: cleanText(item.qualification),
+                    experience: cleanText(item.experience),
+                    skills: cleanText(item.skills),
+                    evaluation: cleanText(item.evaluation),
+                    percentage_match: cleanText(item.percentage_match),
+                    justification: cleanText(item.justification),
+                };
+            });
+        };
+
         const combinedData = [];
         summarizedData.forEach((summarized) => {
             const match = matchData.find((m) => m.filename === summarized.filename) || {};
@@ -156,7 +177,7 @@
             });
         });
 
-        const dataToExport = summarizedData.length > 0 ? combinedData : matchData;
+        const dataToExport = summarizedData.length > 0 ? cleanDataForCsv(combinedData) : cleanDataForCsv(matchData);
 
         try {
             const response = await axios.post('/download_csv', { summarized_data: dataToExport }, {
