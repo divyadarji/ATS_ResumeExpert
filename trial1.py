@@ -1,15 +1,12 @@
 from flask import Flask, render_template, request, jsonify, Response
 from dotenv import load_dotenv
-import base64
 import os
 import io
 import csv
-from PIL import Image
-import pdf2image
-import google.generativeai as genai
 from PyPDF2 import PdfReader
 import re
 from io import StringIO
+import google.generativeai as genai
 
 # Load environment variables
 load_dotenv()
@@ -17,18 +14,13 @@ genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
 
 app = Flask(__name__)
 
-# Utility to process PDF
-def input_pdf_setup(uploaded_file):
-    pdf_parts = []
-    images = pdf2image.convert_from_bytes(uploaded_file.read())
-    for page in images:
-        img_byte_arr = io.BytesIO()
-        page.save(img_byte_arr, format='JPEG')
-        pdf_parts.append({
-            "mime_type": "image/jpeg",
-            "data": base64.b64encode(img_byte_arr.getvalue()).decode()
-        })
-    return pdf_parts
+# Utility to extract text from PDF
+def extract_text_from_pdf(uploaded_file):
+    pdf_reader = PdfReader(uploaded_file)
+    text = ""
+    for page in pdf_reader.pages:
+        text += page.extract_text() or ""
+    return text.strip()
 
 # Parse Gemini API response
 def parse_gemini_response(response_text, action="summarize"):
@@ -54,9 +46,9 @@ def parse_gemini_response(response_text, action="summarize"):
         return {"error": f"Error parsing response: {e}"}
 
 # Get Gemini API response
-def get_gemini_response(input_text, pdf_content, prompt):
+def get_gemini_response(input_text, prompt):
     model = genai.GenerativeModel('gemini-1.5-flash')
-    response = model.generate_content([input_text, pdf_content[0], prompt])
+    response = model.generate_content([input_text, prompt])
     return response.text
 
 # Routes
@@ -78,7 +70,7 @@ def process_resumes():
 
     prompts = {
         "summarize": """
-        Please summarize the resume with the following details:
+        Please summarize the following resume with the following details:
         - Name
         - Email
         - Qualification
@@ -96,12 +88,12 @@ def process_resumes():
 
     results = []
     for resume in resumes:
-        pdf_parts = input_pdf_setup(resume)
+        resume_text = extract_text_from_pdf(resume)
         prompt = prompts["summarize"] if action == "summarize" else prompts["match"]
-        job_input = job_description if action == "match" else ""
+        input_text = resume_text if action == "summarize" else f"Job Description:\n{job_description}\n\nResume:\n{resume_text}"
 
         try:
-            response_text = get_gemini_response(job_input, pdf_parts, prompt)
+            response_text = get_gemini_response(input_text, prompt)
             structured_data = parse_gemini_response(response_text, action=action)
         except Exception as e:
             structured_data = {
@@ -150,10 +142,10 @@ def download_csv():
         return Response(
             output.getvalue(),
             mimetype="text/csv",
-            headers={"Content-Disposition": "attachment;filename=summary.csv"},
+            headers={"Content-Disposition": "attachment;filename=summary.csv"}
         )
     except Exception as e:
-        return jsonify({"error": f"Error generating CSV: {str(e)}"}), 500
+        return jsonify({"error": f"Error creating CSV: {e}"}), 500
 
 if __name__ == "__main__":
     app.run(debug=True)
