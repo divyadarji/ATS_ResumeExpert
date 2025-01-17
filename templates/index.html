@@ -69,7 +69,7 @@
             const numberOfResumes = formData.getAll('resumes').length;
             let estimatedTime;
             if (action === 'summarize') {
-                estimatedTime = numberOfResumes * 4;  // 4 seconds per resume for summarizing
+                estimatedTime = numberOfResumes * 5;  // 4 seconds per resume for summarizing
             } else if (action === 'match') {
                 estimatedTime = numberOfResumes * 3;  // 3 seconds per resume for percentage match
             }

@@ -56,7 +56,7 @@ def get_gemini_response(input_text, prompt):
     model = genai.GenerativeModel('gemini-1.5-flash')
     
     # Add delay to avoid rate limiting
-    time.sleep(1)  # Adjust delay based on API's rate limits
+    time.sleep(2)  # Adjust delay based on API's rate limits
 
     response = model.generate_content([input_text, prompt])
     return response.text
