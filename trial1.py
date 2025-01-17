@@ -23,24 +23,29 @@ def extract_text_from_pdf(uploaded_file):
     return text.strip()
 
 # Parse Gemini API response
+# Parse Gemini API response
 def parse_gemini_response(response_text, action="summarize"):
     try:
+        def clean_text(text):
+            """Remove unwanted characters like '**' from the text."""
+            return text.replace("**", "").strip()
+
         structured_data = {}
         if action == "match":
             percentage_match = re.search(r"(?i)\s*-?\s*Percentage\s*Match\s*[:\s]*([\d]+%)", response_text)
             justification = re.search(r"(?i)\bJustification\s*[:\s]*(.*)", response_text)
-            structured_data["percentage_match"] = percentage_match.group(1).strip() if percentage_match else "N/A"
-            structured_data["justification"] = justification.group(1).strip() if justification else "N/A"
+            structured_data["percentage_match"] = clean_text(percentage_match.group(1)) if percentage_match else "N/A"
+            structured_data["justification"] = clean_text(justification.group(1)) if justification else "N/A"
         else:
             structured_data = {
-                "name": re.search(r"(?i)\bName:\s*(.+)", response_text).group(1).strip() if re.search(r"(?i)\bName:\s*(.+)", response_text) else "N/A",
-                "email": re.search(r"(?i)\bEmail:\s*(.+)", response_text).group(1).strip() if re.search(r"(?i)\bEmail:\s*(.+)", response_text) else "N/A",
-                "qualification": re.search(r"(?i)\bQualification:\s*(.+)", response_text).group(1).strip() if re.search(r"(?i)\bQualification:\s*(.+)", response_text) else "N/A",
-                "experience": re.search(r"(?i)\bExperience:\s*(.+)", response_text).group(1).strip() if re.search(r"(?i)\bExperience:\s*(.+)", response_text) else "N/A",
-                "skills": re.search(r"(?i)\bSkills:\s*(.+)", response_text).group(1).strip() if re.search(r"(?i)\bSkills:\s*(.+)", response_text) else "N/A",
+                "name": clean_text(re.search(r"(?i)\bName:\s*(.+)", response_text).group(1)) if re.search(r"(?i)\bName:\s*(.+)", response_text) else "N/A",
+                "email": clean_text(re.search(r"(?i)\bEmail:\s*(.+)", response_text).group(1)) if re.search(r"(?i)\bEmail:\s*(.+)", response_text) else "N/A",
+                "qualification": clean_text(re.search(r"(?i)\bQualification:\s*(.+)", response_text).group(1)) if re.search(r"(?i)\bQualification:\s*(.+)", response_text) else "N/A",
+                "experience": clean_text(re.search(r"(?i)\bExperience:\s*(.+)", response_text).group(1)) if re.search(r"(?i)\bExperience:\s*(.+)", response_text) else "N/A",
+                "skills": clean_text(re.search(r"(?i)\bSkills:\s*(.+)", response_text).group(1)) if re.search(r"(?i)\bSkills:\s*(.+)", response_text) else "N/A",
             }
             evaluation_match = re.search(r"(?i)\bProfessional Evaluation:\s*(.+)", response_text)
-            structured_data["evaluation"] = evaluation_match.group(1).strip() if evaluation_match else "N/A"
+            structured_data["evaluation"] = clean_text(evaluation_match.group(1)) if evaluation_match else "N/A"
         return structured_data
     except Exception as e:
         return {"error": f"Error parsing response: {e}"}
