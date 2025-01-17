@@ -5,6 +5,7 @@ import io
 import csv
 from PyPDF2 import PdfReader
 import re
+import time
 from io import StringIO
 import google.generativeai as genai
 
@@ -50,9 +51,13 @@ def parse_gemini_response(response_text, action="summarize"):
     except Exception as e:
         return {"error": f"Error parsing response: {e}"}
 
-# Get Gemini API response
+# Rate-limited API call to Gemini
 def get_gemini_response(input_text, prompt):
     model = genai.GenerativeModel('gemini-1.5-flash')
+    
+    # Add delay to avoid rate limiting
+    time.sleep(1)  # Adjust delay based on API's rate limits
+
     response = model.generate_content([input_text, prompt])
     return response.text
 
@@ -102,6 +107,7 @@ def process_resumes():
             structured_data = parse_gemini_response(response_text, action=action)
         except Exception as e:
             structured_data = {
+                "filename": resume.filename,
                 "name": "Error processing resume",
                 "email": "N/A",
                 "qualification": "N/A",
