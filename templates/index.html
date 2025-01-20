@@ -137,7 +137,8 @@
                 } else if (action === 'match') {
                     output += `
                         <strong>Percentage Match:</strong> ${result.percentage_match || "N/A"}<br>
-                        <strong>Justification:</strong> ${result.justification || "N/A"}<br>`;
+                        <strong>Justification:</strong> ${result.justification || "N/A"}<br>
+                        <strong>Lacking:</strong> ${result.lacking || "N/A"}<br>`;
                 }
                 output += `</li>`;
             });
@@ -153,6 +154,7 @@
                     ...summarized,
                     percentage_match: match.percentage_match || "N/A",
                     justification: match.justification || "N/A",
+                    lacking: match.lacking || "N/A",
                 });
             });
 
