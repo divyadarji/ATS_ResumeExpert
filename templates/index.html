@@ -105,8 +105,8 @@
             let timeLeft = timeInSeconds;
 
             countdownInterval = setInterval(() => {
-                let minutes = Math.floor(timeLeft / 60);  // Calculate minutes
-                let seconds = timeLeft % 60;  // Calculate remaining seconds
+                let minutes = Math.floor(timeLeft / 60);  
+                let seconds = timeLeft % 60;  
 
                 // Update the time display in minutes and seconds format
                 timeRemainingElement.innerHTML = `Estimated Time Remaining: ${minutes} minute${minutes !== 1 ? 's' : ''} ${seconds} second${seconds !== 1 ? 's' : ''}`;
