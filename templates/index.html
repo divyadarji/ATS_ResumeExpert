@@ -1,109 +1,183 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ATS Resume Expert</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
-    <link href="/static/style.css" rel="stylesheet">
-       
-</head>
-<body>
-<div class="container">
-    <h1>ATS Resume Expert</h1>
-    <form id="resumeForm" method="POST" enctype="multipart/form-data">
-        <div class="mb-3">
-            <label for="jobDescription" class="form-label">Job Description</label>
-            <textarea class="form-control" id="jobDescription" name="job_description" rows="4" placeholder="Paste the job description here..."></textarea>
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Resume Expert</title>
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+        <link href="/static/style.css" rel="stylesheet">
+    </head>
+    <body>
+    <div class="container mt-5">
+        <h1 class="text-center">Resume Expert</h1>
+        <form id="resumeForm" enctype="multipart/form-data">
+            <div class="mb-3">
+                <label for="jobDescription" class="form-label">Job Description</label>
+                <textarea class="form-control" id="jobDescription" name="job_description" rows="6" placeholder="Enter the job description here..."></textarea>
+            </div>
+            <div class="mb-3">
+                <label for="resumes" class="form-label">Upload Resumes (PDF)</label>
+                <input type="file" class="form-control" id="resumes" name="resumes" accept=".pdf" multiple required>
+            </div>
+            <div class="text-center mb-3">
+                <button type="button" class="btn btn-primary me-2" id="summarizeButton">Summarize Resumes</button>
+                <button type="button" class="btn btn-secondary me-2" id="matchButton">Percentage Match</button>
+                <button type="button" class="btn btn-success" id="downloadCsvButton" style="display: none;">Download CSV</button>
+            </div>
+        </form>
+        <div id="loader" style="display: none;">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <p id="timeRemaining">Processing... Please wait.</p>
         </div>
-        <div class="mb-3">
-            <label for="resumes" class="form-label">Upload Resumes (PDF)</label>
-            <input type="file" class="form-control" id="resumes" name="resumes" accept=".pdf" multiple required>
+        <div id="results" class="results"></div>
+        <div class="text-center mt-4">
         </div>
-        <div class="mb-3 text-center">
-            <button type="button" class="btn btn-primary me-2" id="summarizeButton">Summarize Resumes</button>
-            <button type="button" class="btn btn-secondary" id="matchButton">Percentage Match</button>
-        </div>
-    </form>
-    <div id="loader">
-        <div class="spinner-border text-primary" role="status">
-            <span class="visually-hidden">Loading...</span>
-        </div>
-        <p>Processing... Please wait.</p>
     </div>
-    <div id="results" class="results"></div>
-</div>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script>
+        const summarizeButton = document.getElementById('summarizeButton');
+        const matchButton = document.getElementById('matchButton');
+        const loader = document.getElementById('loader');
+        const timeRemainingElement = document.getElementById('timeRemaining');
+        const resultsDiv = document.getElementById('results');
+        const downloadCsvButton = document.getElementById('downloadCsvButton');
 
-<script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
-<script>
-    const form = document.getElementById('resumeForm');
-    const summarizeButton = document.getElementById('summarizeButton');
-    const matchButton = document.getElementById('matchButton');
-    const loader = document.getElementById('loader');
-    const resultsDiv = document.getElementById('results');
+        let summarizedData = [];
+        let matchData = [];
 
-    summarizeButton.onclick = () => submitForm('summarize');
-    matchButton.onclick = () => submitForm('match');
-    const submitForm = async (action) => {
-        const formData = new FormData(form);
-        formData.append('action', action);
-
-        resultsDiv.innerHTML = '';
-        loader.style.display = 'block';
-
-        try {
-            const response = await axios.post('/process_resumes', formData, {
-                headers: { 'Content-Type': 'multipart/form-data' },
-            });
-
-            console.log("DEBUG: API Response Data:", response.data);
-
-            // Check for alert message from the response
-            if (response.data.alert) {
-                alert(response.data.alert);  // Display the alert message to the user
-                loader.style.display = 'none';  // Hide the loader
-                return;  // Stop further processing if an alert is shown
-            }
-
-            const results = response.data;
-            if (results.length === 0) {
-                resultsDiv.innerHTML = '<p>No results found.</p>';
+        summarizeButton.onclick = () => submitForm('summarize');
+        matchButton.onclick = () => {
+            const jobDescription = document.getElementById('jobDescription').value.trim();
+            if (!jobDescription) {
+                alert('Please provide a job description to perform percentage match.');
                 return;
             }
+            submitForm('match');
+        };
 
-            let output = '<h2>Results</h2>';
-            results.forEach(res => {
-                console.log("DEBUG: Processing Result:", res);
+        const submitForm = async (action) => {
+            const formData = new FormData(document.getElementById('resumeForm'));
+            formData.append('action', action);
+
+            loader.style.display = 'block';
+            downloadCsvButton.style.display = 'none';
+            resultsDiv.innerHTML = '';
+
+            const numberOfResumes = formData.getAll('resumes').length;
+            let estimatedTime;
+            if (action === 'summarize') {
+                estimatedTime = numberOfResumes * 5;  // 4 seconds per resume for summarizing
+            } else if (action === 'match') {
+                estimatedTime = numberOfResumes * 3;  // 3 seconds per resume for percentage match
+            }
+
+            // Start the countdown
+            startCountdown(estimatedTime);
+
+            try {
+                const response = await axios.post('/process_resumes', formData, {
+                    headers: { 'Content-Type': 'multipart/form-data' },
+                });
+
+                const results = response.data;
+
                 if (action === 'summarize') {
-                    output += `<div class="result-card">
-                        <h4>${res.filename}</h4>
-                        <p><strong>Name:</strong> ${res.name || 'N/A'}</p>
-                        <p><strong>Email:</strong> ${res.email || 'N/A'}</p>
-                        <p><strong>Qualification:</strong> ${res.qualification || 'N/A'}</p>
-                        <p><strong>Experience:</strong> ${res.experience || 'N/A'}</p>
-                        <p><strong>Skills:</strong> ${res.skills || 'N/A'}</p>
-                        <p><strong>Professional Evaluation:</strong> ${res.evaluation || 'N/A'}</p>
-                    </div>`;
+                    summarizedData = results;
                 } else if (action === 'match') {
-                    output += `<div class="result-card">
-                        <h4>${res.filename}</h4>
-                        <p><strong>Percentage Match:</strong> ${res.percentage_match || 'N/A'}</p>
-                        <p><strong>Justification:</strong> ${res.justification || 'N/A'}</p>
-                    </div>`;
+                    matchData = results;
                 }
+
+                displayResults(results, action);
+                downloadCsvButton.style.display = 'inline-block';
+            } catch (err) {
+                alert('Error processing resumes. Please try again.');
+            } finally {
+                loader.style.display = 'none';
+                clearInterval(countdownInterval);
+                timeRemainingElement.innerHTML = 'Processing complete!';
+            }
+        };
+
+        const startCountdown = (timeInSeconds) => {
+            let timeLeft = timeInSeconds;
+
+            countdownInterval = setInterval(() => {
+                let minutes = Math.floor(timeLeft / 60);  
+                let seconds = timeLeft % 60;  
+
+                // Update the time display in minutes and seconds format
+                timeRemainingElement.innerHTML = `Estimated Time Remaining: ${minutes} minute${minutes !== 1 ? 's' : ''} ${seconds} second${seconds !== 1 ? 's' : ''}`;
+
+                timeLeft--;
+
+                if (timeLeft < 0) {
+                    clearInterval(countdownInterval);
+                    timeRemainingElement.innerHTML = 'Processing complete!';
+                }
+            }, 1000);
+        };
+
+
+        const displayResults = (results, action) => {
+            let output = '<h2>Results</h2><ul class="list-group">';
+            results.forEach((result) => {
+                output += `<li class="list-group-item">
+                    <strong>Filename:</strong> ${result.filename || "N/A"}<br>`;
+                if (action === 'summarize') {
+                    output += `
+                        <strong>Name:</strong> ${result.name || "N/A"}<br>
+                        <strong>Email:</strong> ${result.email || "N/A"}<br>
+                        <strong>Qualification:</strong> ${result.qualification || "N/A"}<br>
+                        <strong>Experience:</strong> ${result.experience || "N/A"}<br>
+                        <strong>Skills:</strong> ${result.skills || "N/A"}<br>
+                        <strong>Evaluation:</strong> ${result.evaluation || "N/A"}<br>`;
+                } else if (action === 'match') {
+                    output += `
+                        <strong>Percentage Match:</strong> ${result.percentage_match || "N/A"}<br>
+                        <strong>Justification:</strong> ${result.justification || "N/A"}<br>
+                        <strong>Lacking:</strong> ${result.lacking || "N/A"}<br>`;
+                }
+                output += `</li>`;
             });
+            output += '</ul>';
             resultsDiv.innerHTML = output;
+        };
 
-        } catch (err) {
-            console.error("DEBUG: API Error:", err);
-            alert('Error processing resumes.');
-        } finally {
-            loader.style.display = 'none';
-        }
-    };
+        downloadCsvButton.onclick = async () => {
+            const combinedData = [];
+            summarizedData.forEach((summarized) => {
+                const match = matchData.find((m) => m.filename === summarized.filename) || {};
+                combinedData.push({
+                    ...summarized,
+                    percentage_match: match.percentage_match || "N/A",
+                    justification: match.justification || "N/A",
+                    lacking: match.lacking || "N/A",
+                });
+            });
 
-   
-</script>
-</body>
-</html>
+            const dataToExport = summarizedData.length > 0 ? combinedData : matchData;
+
+            try {
+                const response = await axios.post('/download_csv', { summarized_data: dataToExport }, {
+                    headers: { 'Content-Type': 'application/json' },
+                    responseType: 'blob',
+                });
+
+                const blob = new Blob([response.data], { type: 'text/csv' });
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.style.display = 'none';
+                a.href = url;
+                a.download = 'summary.csv';
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+            } catch (err) {
+                alert('Error downloading CSV. Please try again.');
+            }
+        };
+    </script>
+    </body>
+    </html>

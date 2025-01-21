@@ -1,64 +1,124 @@
+/* General Body Styling */
 body {
     font-family: 'Poppins', sans-serif;
     background: linear-gradient(135deg, #000000, #c5c9cf);
     color: white;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    overflow: hidden;
 }
+
+/* Container Styling */
 .container {
     background: #ffffff;
     padding: 30px;
-    border-radius: 8px;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
     margin-top: 50px;
+    /* max-width: 100%; */
+    width: 100%;
+    animation: fadeIn 1s ease-in-out;
 }
+
+/* Header Styling */
 h1 {
-    font-size: 2rem;
-    font-weight: 600;
+    font-size: 2.5rem;
+    font-weight: 700;
     text-align: center;
     color: #6a11cb;
-    margin-bottom: 30px;
+    margin-bottom: 20px;
+    animation: slideUp 1s ease-out;
 }
+
+/* Form Label Styling */
 .form-label {
     font-weight: 600;
     color: #6a11cb;
+    animation: fadeIn 1s ease-out;
 }
+
+/* Form Control Styling */
 .form-control {
     border-radius: 10px;
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    transition: transform 0.2s ease-in-out;
 }
+
+.form-control:focus {
+    border-color: #2575fc;
+    box-shadow: 0 0 5px rgba(37, 117, 252, 0.5);
+    transform: scale(1.05);
+}
+
+/* Button Styling */
 .btn {
-    transition: background 0.3s ease;
+    transition: background 0.3s ease, transform 0.2s ease;
     border-radius: 25px;
+    padding: 12px 24px;
+    font-weight: 300;
 }
+
 .btn-primary {
     background-color: #2575fc;
 }
+
 .btn-primary:hover {
     background-color: #0056b3;
-    transform: translateY(-3px);
+    transform: translateY(-3px) scale(1.05);
 }
+
 .btn-secondary {
     background-color: #6a11cb;
 }
+
 .btn-secondary:hover {
     background-color: #5a0a99;
-    transform: translateY(-3px);
+    transform: translateY(-3px) scale(1.05);
 }
+
+.btn-success {
+    background-color: #28a745;
+}
+
+.btn-success:hover {
+    background-color: #218838;
+    transform: translateY(-3px) scale(1.05);
+}
+
+/* Loader Styling */
 #loader {
     display: none;
     text-align: center;
     margin-top: 20px;
 }
+
 #loader .spinner-border {
-    animation: spin 2s linear infinite;
+    margin-bottom: 10px;
+    width: 3rem;
+    height: 3rem;
+    animation: spin 1s linear infinite;
 }
-@keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
+
+#loader p {
+    font-size: 1rem;
+    color: #555;
 }
+
+/* Results Styling */
 .results {
     margin-top: 30px;
 }
-.result-card {
+
+.results ul {
+    padding-left: 0;
+    list-style-type: none;
+}
+
+.results li {
     background: #f8f9fa;
     padding: 20px;
     border-radius: 8px;
@@ -66,22 +126,66 @@ h1 {
     margin-bottom: 20px;
     transition: transform 0.3s, box-shadow 0.3s;
 }
-.result-card:hover {
+
+.results li:hover {
     transform: translateY(-5px);
-    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+    cursor: pointer;
 }
-.result-card h4 {
-    font-size: 1.2rem;
-    color: #2575fc;
+#timeRemaining{
+    animation: ease-in-out;
 }
-.result-card p {
-    font-size: 1rem;
-    color: #333;
+
+/* Animations for hover effect */
+@keyframes resultHoverEffect {
+    0% {
+        transform: translateY(0);
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    }
+    100% {
+        transform: translateY(-5px);
+        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+    }
 }
+
+.results li:hover {
+    animation: resultHoverEffect 0.3s ease-in-out;
+}
+
+
+/* Form Control and Button Spacing */
 .form-control, .btn {
     margin-bottom: 20px;
 }
-.form-control:focus {
-    border-color: #2575fc;
-    box-shadow: 0 0 5px rgba(37, 117, 252, 0.5);
+
+/* Animations */
+@keyframes fadeIn {
+    0% {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes slideUp {
+    0% {
+        opacity: 0;
+        transform: translateY(50px);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes spin {
+    0% {
+        transform: rotate(0deg);
+    }
+    100% {
+        transform: rotate(360deg);
+    }
 }
