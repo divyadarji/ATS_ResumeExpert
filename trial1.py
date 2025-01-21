@@ -43,7 +43,10 @@ def parse_gemini_response(response_text, action="summarize"):
     try:
         def clean_text(text):
             """Remove unwanted characters like '**', '*' from the text."""
-            return text.replace("**", "").replace("*", "").strip()
+            if text:
+                return text.replace("**", "").replace("*", "").strip()
+            return text
+
 
         structured_data = {}
         if action == "match":
@@ -187,4 +190,4 @@ def download_csv():
         return jsonify({"error": f"Error creating CSV: {e}"}), 500
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(debug=True, host='0.0.0.0', port=5000)

@@ -1,78 +1,82 @@
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, request, jsonify, Response
 from dotenv import load_dotenv
-import base64
 import os
 import io
-from PIL import Image
-import pdf2image
-import google.generativeai as genai
+import csv
 from PyPDF2 import PdfReader
 import re
+import time
+from io import StringIO
+import google.generativeai as genai
+from langdetect import detect
+from googletrans import Translator
+import pytesseract
+from PIL import Image
 
 # Load environment variables
 load_dotenv()
 genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
 
+# Initialize Flask app
 app = Flask(__name__)
 
-# Utility to process PDF
-def input_pdf_setup(uploaded_file):
-    pdf_parts = []
-    images = pdf2image.convert_from_bytes(uploaded_file.read())
-    for page in images:
-        img_byte_arr = io.BytesIO()
-        page.save(img_byte_arr, format='JPEG')
-        pdf_parts.append({
-            "mime_type": "image/jpeg",
-            "data": base64.b64encode(img_byte_arr.getvalue()).decode()
-        })
-    return pdf_parts
+# Utility to extract text from PDF (regular PDFs)
+def extract_text_from_pdf(uploaded_file):
+    pdf_reader = PdfReader(uploaded_file)
+    text = ""
+    for page in pdf_reader.pages:
+        text += page.extract_text() or ""
+    return text.strip()
+
+def extract_text_with_ocr(uploaded_file, lang='eng'):
+    return pytesseract.image_to_string(Image.open(uploaded_file), lang=lang)
+
+def detect_language(text):
+    return detect(text)
+
+def translate_to_english(text, source_lang):
+    translator = Translator()
+    return translator.translate(text, src=source_lang, dest='en').text
 
 # Parse Gemini API response
 def parse_gemini_response(response_text, action="summarize"):
     try:
-        structured_data = {}
-        print("DEBUG: Raw Response Text (for match action):", response_text)  # Log the full response text
+        def clean_text(text):
+            """Remove unwanted characters like '**', '*' from the text."""
+            if text:
+                return text.replace("**", "").replace("*", "").strip()
+            return text
 
+
+        structured_data = {}
         if action == "match":
-            # Relaxed regex pattern to handle leading hyphen and match percentage
             percentage_match = re.search(r"(?i)\s*-?\s*Percentage\s*Match\s*[:\s]*([\d]+%)", response_text)
             justification = re.search(r"(?i)\bJustification\s*[:\s]*(.*)", response_text)
-
-            # Debugging: check if we captured anything
-            print("DEBUG: Found Percentage Match:", percentage_match)
-            print("DEBUG: Justification found:", justification)
-
-            if percentage_match:
-                structured_data["percentage_match"] = percentage_match.group(1).strip()
-            else:
-                structured_data["percentage_match"] = "N/A"
-                print("DEBUG: Percentage match regex did not capture anything.")
-
-            if justification:
-                structured_data["justification"] = justification.group(1).strip()
-            else:
-                structured_data["justification"] = "N/A"
-                print("DEBUG: Justification regex did not capture anything.")
+            lacking = re.search(r"(?i)\bLacking\s*[:\s]*(.*)", response_text)
+            structured_data["percentage_match"] = clean_text(percentage_match.group(1)) if percentage_match else "N/A"
+            structured_data["justification"] = clean_text(justification.group(1)) if justification else "N/A"
+            structured_data["lacking"] = clean_text(lacking.group(1)) if lacking else "N/A"
         else:
             structured_data = {
-                "name": re.search(r"(?i)\bName:\s*(.+)", response_text).group(1).strip() if re.search(r"(?i)\bName:\s*(.+)", response_text) else "N/A",
-                "email": re.search(r"(?i)\bEmail:\s*(.+)", response_text).group(1).strip() if re.search(r"(?i)\bEmail:\s*(.+)", response_text) else "N/A",
-                "qualification": re.search(r"(?i)\bQualification:\s*(.+)", response_text).group(1).strip() if re.search(r"(?i)\bQualification:\s*(.+)", response_text) else "N/A",
-                "experience": re.search(r"(?i)\bExperience:\s*(.+)", response_text).group(1).strip() if re.search(r"(?i)\bExperience:\s*(.+)", response_text) else "N/A",
-                "skills": re.search(r"(?i)\bSkills:\s*(.+)", response_text).group(1).strip() if re.search(r"(?i)\bSkills:\s*(.+)", response_text) else "N/A",
+                "name": clean_text(re.search(r"(?i)\bName:\s*(.+)", response_text).group(1)) if re.search(r"(?i)\bName:\s*(.+)", response_text) else "N/A",
+                "email": clean_text(re.search(r"(?i)\bEmail:\s*(.+)", response_text).group(1)) if re.search(r"(?i)\bEmail:\s*(.+)", response_text) else "N/A",
+                "qualification": clean_text(re.search(r"(?i)\bQualification:\s*(.+)", response_text).group(1)) if re.search(r"(?i)\bQualification:\s*(.+)", response_text) else "N/A",
+                "experience": clean_text(re.search(r"(?i)\bExperience:\s*(.+)", response_text).group(1)) if re.search(r"(?i)\bExperience:\s*(.+)", response_text) else "N/A",
+                "skills": clean_text(re.search(r"(?i)\bSkills:\s*(.+)", response_text).group(1)) if re.search(r"(?i)\bSkills:\s*(.+)", response_text) else "N/A",
             }
             evaluation_match = re.search(r"(?i)\bProfessional Evaluation:\s*(.+)", response_text)
-            structured_data["evaluation"] = evaluation_match.group(1).strip() if evaluation_match else "N/A"
-
+            structured_data["evaluation"] = clean_text(evaluation_match.group(1)) if evaluation_match else "N/A"
         return structured_data
     except Exception as e:
         return {"error": f"Error parsing response: {e}"}
 
-# Get Gemini API response
-def get_gemini_response(input_text, pdf_content, prompt):
+# Rate-limited API call to Gemini
+def get_gemini_response(input_text, prompt):
     model = genai.GenerativeModel('gemini-1.5-flash')
-    response = model.generate_content([input_text, pdf_content[0], prompt])
+    
+    time.sleep(2)  # Adjust delay based on API's rate limits
+
+    response = model.generate_content([input_text, prompt])
     return response.text
 
 # Routes
@@ -89,13 +93,12 @@ def process_resumes():
     resumes = request.files.getlist("resumes")
     action = request.form["action"]
 
-    # Validate that job description is provided for "match" action
     if action == "match" and not job_description:
         return jsonify({"alert": "Job description is required to process matching action. Please provide a job description to proceed."}), 200
 
     prompts = {
         "summarize": """
-        Please summarize the resume with the following details:
+        Please summarize the following resume with the following details:
         - Name
         - Email
         - Qualification
@@ -107,24 +110,33 @@ def process_resumes():
         Given the resume and the job description, evaluate the match and provide:
         - Percentage Match: [e.g., 80%]
         - Justification: [1-2 concise sentences explaining the match percentage]
+        - Lacking: [list of skills that lacks or qualifications missing from the resume for e.g.,this person lacks experince or skills that are reuired for the job description]
         Ensure the response strictly follows this format.
         """
     }
 
     results = []
     for resume in resumes:
-        pdf_parts = input_pdf_setup(resume)
-        prompt = prompts["summarize"] if action == "summarize" else prompts["match"]
-
-        # Pass job description only for "match" action
-        job_input = job_description if action == "match" else ""
-
         try:
-            # Ensure job description is included in the API request for "match"
-            response_text = get_gemini_response(job_input, pdf_parts, prompt)
+            resume_text = extract_text_from_pdf(resume)
+
+            if not resume_text.strip():
+                resume_text = extract_text_with_ocr(resume, lang='hin+guj+eng')  # Example for Hindi + Gujarati + English
+
+            language = detect_language(resume_text)
+
+            if language != 'en':
+                resume_text = translate_to_english(resume_text, source_lang=language)
+
+            prompt = prompts["summarize"] if action == "summarize" else prompts["match"]
+            input_text = resume_text if action == "summarize" else f"Job Description:\n{job_description}\n\nResume:\n{resume_text}"
+            response_text = get_gemini_response(input_text, prompt)
+
             structured_data = parse_gemini_response(response_text, action=action)
+
         except Exception as e:
             structured_data = {
+                "filename": resume.filename,
                 "name": "Error processing resume",
                 "email": "N/A",
                 "qualification": "N/A",
@@ -132,6 +144,7 @@ def process_resumes():
                 "skills": "N/A",
                 "percentage_match": "N/A" if action == "match" else None,
                 "justification": "N/A" if action == "match" else None,
+                "lacking": "N/A" if action == "match" else None,
                 "evaluation": str(e),
             }
 
@@ -142,5 +155,39 @@ def process_resumes():
 
     return jsonify(results)
 
+@app.route("/download_csv", methods=["POST"])
+def download_csv():
+    try:
+        data = request.json.get("summarized_data")
+        if not data:
+            return jsonify({"error": "No summarized data provided."}), 400
+
+        output = StringIO()
+        writer = csv.writer(output)
+        writer.writerow(["Filename", "Name", "Email", "Qualification", "Experience", "Skills", "Evaluation", "Percentage Match", "Justification", "Lacking"])
+
+        for result in data:
+            writer.writerow([
+                result.get("filename", ""),
+                result.get("name", ""),
+                result.get("email", ""),
+                result.get("qualification", ""),
+                result.get("experience", ""),
+                result.get("skills", ""),
+                result.get("evaluation", ""),
+                result.get("percentage_match", ""),
+                result.get("justification", ""),
+                result.get("lacking", ""),
+            ])
+
+        output.seek(0)
+        return Response(
+            output.getvalue(),
+            mimetype="text/csv",
+            headers={"Content-Disposition": "attachment;filename=summary.csv"}
+        )
+    except Exception as e:
+        return jsonify({"error": f"Error creating CSV: {e}"}), 500
+
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(debug=True, host='0.0.0.0', port=5000)
