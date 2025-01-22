@@ -110,7 +110,7 @@ def process_resumes():
         Given the resume and the job description, evaluate the match and provide:
         - Percentage Match: [e.g., 80%]
         - Justification: [1-2 concise sentences explaining the match percentage]
-        - Lacking: [list of skills that lacks or qualifications missing from the resume for e.g.,this person lacks experince or skills that are reuired for the job description]
+        - Lacking: [only list of skills that lacks or qualifications missing from the resume for e.g.,this person lacks experince or skills that are required for the job description]
         Ensure the response strictly follows this format.
         """
     }
