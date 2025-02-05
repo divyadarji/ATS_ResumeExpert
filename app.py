@@ -66,6 +66,18 @@ def parse_gemini_response(response_text, action="summarize"):
             email_match = re.search(r"(?i)(?:\*\*)?Email[:\s]*(?:\*\*)?([\w\.\-]+@[\w\.\-]+)", response_text)
             structured_data["email"] = clean_text(email_match.group(1)) if email_match else "N/A"
 
+            mobile_match = re.search(
+            r"(?i)(?:\*\*)?(?:\bMobile\s*Number\b|\bM\s*No\b|\bPhone\b|\bContact\b|\bCell\b|\bMobile\b|Contact\s*NO)?[\s:\-]*"
+            r"(\+?\(?\d{1,4}\)?[\s-]?\d{4,5}[\s-]?\d{5}|"  # (+91) 72858 68035 or +91-72858-68035
+            r"\d{10}|"  # Standard 10-digit format (7285868035)
+            r"\d{5}[\s-]?\d{5}|"  # Split format (72858 68035 or 72858-68035)
+            r"\d{4}[\s-]?\d{3}[\s-]?\d{3}|"  # 4-3-3 format (1234-567-890)
+            r"\d{4}[\s-]?\d{4}[\s-]?\d{2}"  # 4-4-2 format (1234-5678-90)
+            r")", response_text)
+
+
+            structured_data["phone"] = clean_text(mobile_match.group(1)) if mobile_match else "N/A"
+
             qualification_match = re.search(r"(?i)(?:Qualification|Education)[\s]*[:\-]?\s*(.*)", response_text)
             structured_data["qualification"] = clean_text(qualification_match.group(1)) if qualification_match else "N/A"
 
@@ -115,6 +127,7 @@ def process_resumes():
         always extract text with lables like below.
         - Name: [Full Name]
         - Email: [Email Address]
+        - Contact NO: [Contact Number /  Mobile number]
         - Qualification: [Highest Qualification] with college
         - Experience: - [Company Name], [Job Title], [Duration] ,[add all experince companies details like this]
         - Skills: [List of skills]
@@ -168,6 +181,7 @@ def process_resumes():
                 "filename": resume.filename,
                 "name": "Error processing resume",
                 "email": "N/A",
+                "phone": "N/A",
                 "qualification": "N/A",
                 "experience": "N/A",
                 "skills": "N/A",
@@ -193,13 +207,14 @@ def download_csv():
 
         output = StringIO()
         writer = csv.writer(output)
-        writer.writerow(["Filename", "Name", "Email", "Qualification", "Experience", "Skills", "Evaluation", "Percentage Match", "Justification", "Lacking"])
+        writer.writerow(["Filename", "Name", "Email", "phone", "Qualification", "Experience", "Skills", "Evaluation", "Percentage Match", "Justification", "Lacking"])
 
         for result in data:
             writer.writerow([
                 result.get("filename", ""),
                 result.get("name", ""),
                 result.get("email", ""),
+                result.get("phone", ""),
                 result.get("qualification", ""),
                 result.get("experience", ""),
                 result.get("skills", ""),
