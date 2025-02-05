@@ -38,39 +38,51 @@ def translate_to_english(text, source_lang):
     translator = Translator()
     return translator.translate(text, src=source_lang, dest='en').text
 
-# Parse Gemini API response
+
+
 def parse_gemini_response(response_text, action="summarize"):
     try:
         def clean_text(text):
-            """Remove unwanted characters like '**', '*' from the text."""
+            """Remove unwanted characters like '**', '*', '-', extra spaces, and new lines."""
             if text:
-                return text.replace("**", "").replace("*", "").strip()
+                return text.replace("**", "").replace("*", "").replace("-", "").strip()
             return text
 
-
         structured_data = {}
+
         if action == "match":
             percentage_match = re.search(r"(?i)\s*-?\s*Percentage\s*Match\s*[:\s]*([\d]+%)", response_text)
             justification = re.search(r"(?i)\bJustification\s*[:\s]*(.*)", response_text)
             lacking = re.search(r"(?i)\bLacking\s*[:\s]*(.*)", response_text)
+
             structured_data["percentage_match"] = clean_text(percentage_match.group(1)) if percentage_match else "N/A"
             structured_data["justification"] = clean_text(justification.group(1)) if justification else "N/A"
             structured_data["lacking"] = clean_text(lacking.group(1)) if lacking else "N/A"
+
         else:
-            structured_data = {
-                "name": clean_text(re.search(r"(?i)\bName:\s*(.+)", response_text).group(1)) if re.search(r"(?i)\bName:\s*(.+)", response_text) else "N/A",
-                "email": clean_text(re.search(r"(?i)\bEmail:\s*(.+)", response_text).group(1)) if re.search(r"(?i)\bEmail:\s*(.+)", response_text) else "N/A",
-                "qualification": clean_text(re.search(r"(?i)\bQualification:\s*(.+)", response_text).group(1)) if re.search(r"(?i)\bQualification:\s*(.+)", response_text) else "N/A",
-                "experience": clean_text(re.search(r"(?i)\bExperience:\s*(.+)", response_text).group(1)) if re.search(r"(?i)\bExperience:\s*(.+)", response_text) else "N/A",
-                "skills": clean_text(re.search(r"(?i)\bSkills:\s*(.+)", response_text).group(1)) if re.search(r"(?i)\bSkills:\s*(.+)", response_text) else "N/A",
-            }
-            evaluation_match = re.search(r"(?i)\bProfessional Evaluation:\s*(.+)", response_text)
+            name_match = re.search(r"(?i)(?:Name|Full Name)[\s]*[:\-]?\s*(.*)", response_text)
+            structured_data["name"] = clean_text(name_match.group(1)) if name_match else "N/A"
+
+            email_match = re.search(r"(?i)(?:\*\*)?Email[:\s]*(?:\*\*)?([\w\.\-]+@[\w\.\-]+)", response_text)
+            structured_data["email"] = clean_text(email_match.group(1)) if email_match else "N/A"
+
+            qualification_match = re.search(r"(?i)(?:Qualification|Education)[\s]*[:\-]?\s*(.*)", response_text)
+            structured_data["qualification"] = clean_text(qualification_match.group(1)) if qualification_match else "N/A"
+
+            experience_matches = re.findall(r"(?i)(?:\*\*)?(?:Experience|Work Experience|Career|Employment History|Professional Experience|Career History|Job Experience|Work History|Technical Experience)(?:\*\*)?[^:]*:?\s*(?:\*\*)?([\s\S]+?)(?:\*\*)?\n*(?=\n|$)", response_text)
+            structured_data["experience"] = clean_text("\n".join(experience_matches)) if experience_matches else "N/A"
+
+            skills_match = re.search(r"(?i)Skills[\s]*[:\-]?\s*(.*)", response_text)
+            structured_data["skills"] = clean_text(skills_match.group(1)) if skills_match else "N/A"
+
+            evaluation_match = re.search(r"(?i)Professional Evaluation[\s]*[:\-]?\s*(.*)", response_text, re.DOTALL)
             structured_data["evaluation"] = clean_text(evaluation_match.group(1)) if evaluation_match else "N/A"
+
         return structured_data
+
     except Exception as e:
         return {"error": f"Error parsing response: {e}"}
 
-# Rate-limited API call to Gemini
 def get_gemini_response(input_text, prompt):
     model = genai.GenerativeModel('gemini-1.5-flash')
     
@@ -78,6 +90,8 @@ def get_gemini_response(input_text, prompt):
 
     response = model.generate_content([input_text, prompt])
     return response.text
+
+
 
 # Routes
 @app.route("/")
@@ -98,12 +112,14 @@ def process_resumes():
 
     prompts = {
         "summarize": """
-        Please summarize the following resume with the following details:
-        - Name
-        - Email
-        - Qualification
-        - Experience
-        - Skills
+        always extract text with lables like below.
+        - Name: [Full Name]
+        - Email: [Email Address]
+        - Qualification: [Highest Qualification] with college
+        - Experience: - [Company Name], [Job Title], [Duration] ,[add all experince companies details like this]
+        - Skills: [List of skills]
+        - Professional Evaluation: [Professional Evaluation]
+        Ensure that Experience is formatted as 'Company Name, Role, Duration' that's it no other things should be extracted.  
         Provide a professional evaluation in 1-2 concise sentences at the end.
         """,
         "match": """
@@ -118,10 +134,14 @@ def process_resumes():
     results = []
     for resume in resumes:
         try:
+            # 🔹 Extract text from PDF
             resume_text = extract_text_from_pdf(resume)
 
             if not resume_text.strip():
                 resume_text = extract_text_with_ocr(resume, lang='hin+guj+eng')  # Example for Hindi + Gujarati + English
+
+            # 🔹 Print extracted text to check if parsing works
+            print(f"\n📄 Extracted Text from {resume.filename}:\n{resume_text}\n")
 
             language = detect_language(resume_text)
 
@@ -130,9 +150,18 @@ def process_resumes():
 
             prompt = prompts["summarize"] if action == "summarize" else prompts["match"]
             input_text = resume_text if action == "summarize" else f"Job Description:\n{job_description}\n\nResume:\n{resume_text}"
+
+            # 🔹 Call Gemini API
             response_text = get_gemini_response(input_text, prompt)
 
+            # 🔹 Print API Response for Debugging
+            print(f"\n🔍 Gemini API Response for {resume.filename}:\n{response_text}\n")
+
+            # 🔹 Parse API Response
             structured_data = parse_gemini_response(response_text, action=action)
+
+            # 🔹 Print Parsed Structured Data
+            print(f"\n✅ Parsed Data for {resume.filename}:\n{structured_data}\n")
 
         except Exception as e:
             structured_data = {
@@ -191,3 +220,5 @@ def download_csv():
 
 if __name__ == "__main__":
     app.run(debug=True, host='0.0.0.0', port=5000)
+
+
