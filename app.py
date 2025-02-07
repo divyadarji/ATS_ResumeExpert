@@ -64,14 +64,16 @@ def parse_gemini_response(response_text, action="summarize"):
             email_match = re.search(r"(?i)(?:\*\*)?Email[:\s]*(?:\*\*)?([\w\.\-]+@[\w\.\-]+)", response_text)
             structured_data["email"] = clean_text(email_match.group(1)) if email_match else "N/A"
 
+
+
             mobile_match = re.search(
-            r"(?i)(?:\*\*)?(?:\bMobile\s*Number\b|\bM\s*No\b|\bPhone\b|\bContact\b|\bCell\b|\bMobile\b|Contact\s*NO)?[\s:\-]*"
-            r"(\+?\(?\d{1,4}\)?[\s-]?\d{4,5}[\s-]?\d{5}|"  # (+91) 72858 68035 or +91-72858-68035
-            r"\d{10}|"  # Standard 10-digit format (7285868035)
-            r"\d{5}[\s-]?\d{5}|"  # Split format (72858 68035 or 72858-68035)
-            r"\d{4}[\s-]?\d{3}[\s-]?\d{3}|"  # 4-3-3 format (1234-567-890)
-            r"\d{4}[\s-]?\d{4}[\s-]?\d{2}"  # 4-4-2 format (1234-5678-90)
-            r")", response_text)
+                r"(?i)(?:\*\*)?(?:\bMobile\s*Number\b|\bM\s*No\b|\bPhone\b|\bContact\b|\bCell\b|\bMobile\b|Contact\s*NO)?[\s:\-]*"
+                r"(\+?\d{1,3}[\s-]?"  # Country code (e.g., +1, +91, +44, +971)
+                r"\(?\d{1,4}\)?[\s-]?"  # Area code (optional, e.g., (415) or 020)
+                r"\d{2,4}[\s-]?\d{2,4}[\s-]?\d{2,4}|"  # Main number in various formats (123-456-7890, 1234 567 890)
+                r"\(?\d{2,4}\)?[\s-]?\d{3,4}[\s-]?\d{3,4}"  # Alternative format (e.g., (020) 7946 0958)
+                r")", response_text)
+
 
 
             structured_data["phone"] = clean_text(mobile_match.group(1)) if mobile_match else "N/A"
