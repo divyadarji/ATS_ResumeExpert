@@ -1,24 +1,28 @@
 /* General Body Styling */
+html{
+    height:100%;
+    background: linear-gradient(135deg, #121826, #181a25, #585f98);
+}
 body {
-    font-family: 'Poppins', sans-serif;
-    background: linear-gradient(135deg, #000000, #c5c9cf);
+    font-family: 'Roboto', sans-serif;
+    background: linear-gradient(135deg, #121826, #181a25, #585f98);
+    min-height: 100%;
     color: white;
     margin: 0;
     padding: 0;
     display: flex;
     justify-content: center;
     align-items: center;
-    /* height: 100vh; */
     overflow-y: auto;
     /* overflow: hidden; */
 }
 
 /* Container Styling */
 .container {
-    background: #ffffff;
+    background: linear-gradient(135deg, #5f7af3, #87c1f0);
     padding: 30px;
     border-radius: 12px;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 0 12px rgba(118, 75, 162, 0.7);
     margin-top: 50px;
     /* max-width: 100%; */
     width: 100%;
@@ -28,17 +32,18 @@ body {
 /* Header Styling */
 h1 {
     font-size: 2.5rem;
-    font-weight: 700;
+    font-weight: 1000;
     text-align: center;
-    color: #6a11cb;
     margin-bottom: 20px;
     animation: slideUp 1s ease-out;
+    background: linear-gradient(to right, #471d5a, #4e6ae5);
+    -webkit-background-clip: text;
+    color: transparent;
 }
-
 /* Form Label Styling */
 .form-label {
     font-weight: 600;
-    color: #6a11cb;
+    color: #000000;
     animation: fadeIn 1s ease-out;
 }
 
@@ -65,6 +70,7 @@ h1 {
 
 .btn-primary {
     background-color: #2575fc;
+    /* font-weight: bolder; */
 }
 
 .btn-primary:hover {
@@ -74,6 +80,7 @@ h1 {
 
 .btn-secondary {
     background-color: #6a11cb;
+    /* font-weight: bolder; */
 }
 
 .btn-secondary:hover {
@@ -83,6 +90,7 @@ h1 {
 
 .btn-success {
     background-color: #28a745;
+    font-weight: bolder;
 }
 
 .btn-success:hover {

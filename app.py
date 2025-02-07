@@ -17,10 +17,8 @@ from PIL import Image
 load_dotenv()
 genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
 
-# Initialize Flask app
 app = Flask(__name__)
 
-# Utility to extract text from PDF (regular PDFs)
 def extract_text_from_pdf(uploaded_file):
     pdf_reader = PdfReader(uploaded_file)
     text = ""
@@ -167,13 +165,10 @@ def process_resumes():
             # 🔹 Call Gemini API
             response_text = get_gemini_response(input_text, prompt)
 
-            # 🔹 Print API Response for Debugging
             print(f"\n🔍 Gemini API Response for {resume.filename}:\n{response_text}\n")
 
-            # 🔹 Parse API Response
             structured_data = parse_gemini_response(response_text, action=action)
 
-            # 🔹 Print Parsed Structured Data
             print(f"\n✅ Parsed Data for {resume.filename}:\n{structured_data}\n")
 
         except Exception as e:
