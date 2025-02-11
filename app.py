@@ -12,6 +12,7 @@ from langdetect import detect
 from googletrans import Translator
 import pytesseract
 from PIL import Image
+import unicodedata  # For Unicode normalization
 
 # Load environment variables
 load_dotenv()
@@ -37,45 +38,65 @@ def translate_to_english(text, source_lang):
     return translator.translate(text, src=source_lang, dest='en').text
 
 
+def clean_text(text):
+    if text:
+        return re.sub(r'\*\*|\*|__|_', '', text).strip()
+    return text
+
 
 def parse_gemini_response(response_text, action="summarize"):
+    structured_data = {}
+    response_text = response_text.replace('\u2022', '-')  # Convert bullet points to hyphens
+
     try:
-        def clean_text(text):
-            """Remove unwanted characters like '**', '*', '-', extra spaces, and new lines."""
-            if text:
-                return text.replace("**", "").replace("*", "").replace("-", "").strip()
-            return text
-
-        structured_data = {}
-
         if action == "match":
-            percentage_match = re.search(r"(?i)\s*-?\s*Percentage\s*Match\s*[:\s]*([\d]+%)", response_text)
-            justification = re.search(r"(?i)\bJustification\s*[:\s]*(.*)", response_text)
-            lacking = re.search(r"(?i)\bLacking\s*[:\s]*(.*)", response_text)
+            # Decode and Normalize
+            response_text = response_text.encode('utf-8').decode('utf-8')
+            response_text = unicodedata.normalize('NFKC', response_text)
 
-            structured_data["percentage_match"] = clean_text(percentage_match.group(1)) if percentage_match else "N/A"
+            # More Flexible Regex for Percentage Match
+            # Updated regex for percentage_match
+            percentage_match = re.search(
+                r'(?i)(?:[\*\s-]*Percentage Match[\*\s-]*:?)\s*(.*?)(?=\n\s*\n|$|\n\s*-?\s*[\*\w-]+:)',
+                response_text
+            )
+
+            if percentage_match:
+                percentage = percentage_match.group(1)
+                cleaned_percentage = clean_text(percentage)
+                structured_data["percentage_match"] = cleaned_percentage
+            else:
+                structured_data["percentage_match"] = "N/A"
+
+            justification = re.search(
+                r'(?i)(?:[\*\s-]*Justification[\*\s-]*:?)\s*(.*?)(?=\n\s*\n|$|\n\s*[\*\w-]+:)',
+                response_text,
+                re.DOTALL
+            )
             structured_data["justification"] = clean_text(justification.group(1)) if justification else "N/A"
-            structured_data["lacking"] = clean_text(lacking.group(1)) if lacking else "N/A"
 
-        else:
+            lacking = re.search(
+                r'(?i)(?:[\*\s-]*Lacking[\*\s-]*:?)\s*((?:[\*\s-]*.*(?:\n|$))+)',
+                response_text,
+                re.DOTALL
+            )
+            lacking_text = lacking.group(1) if lacking else "N/A"
+            structured_data["lacking"] = clean_text(lacking_text).replace('\n', '<br>') if lacking_text != "N/A" else "N/A"
+
+        else:  # Default action (summarize)
             name_match = re.search(r"(?i)(?:Name|Full Name)[\s]*[:\-]?\s*(.*)", response_text)
             structured_data["name"] = clean_text(name_match.group(1)) if name_match else "N/A"
 
             email_match = re.search(r"(?i)(?:\*\*)?Email[:\s]*(?:\*\*)?([\w\.\-]+@[\w\.\-]+)", response_text)
             structured_data["email"] = clean_text(email_match.group(1)) if email_match else "N/A"
 
-
-
             mobile_match = re.search(
                 r"(?i)(?:\*\*)?(?:\bMobile\s*Number\b|\bM\s*No\b|\bPhone\b|\bContact\b|\bCell\b|\bMobile\b|Contact\s*NO)?[\s:\-]*"
-                r"(\+?\d{1,3}[\s-]?"  # Country code (e.g., +1, +91, +44, +971)
-                r"\(?\d{1,4}\)?[\s-]?"  # Area code (optional, e.g., (415) or 020)
-                r"\d{2,4}[\s-]?\d{2,4}[\s-]?\d{2,4}|"  # Main number in various formats (123-456-7890, 1234 567 890)
-                r"\(?\d{2,4}\)?[\s-]?\d{3,4}[\s-]?\d{3,4}"  # Alternative format (e.g., (020) 7946 0958)
+                r"(\+?\d{1,3}[\s-]?"
+                r"\(?\d{1,4}\)?[\s-]?"
+                r"\d{2,4}[\s-]?\d{2,4}[\s-]?\d{2,4}|"
+                r"\(?\d{2,4}\)?[\s-]?\d{3,4}[\s-]?\d{3,4}"
                 r")", response_text)
-
-
-
             structured_data["phone"] = clean_text(mobile_match.group(1)) if mobile_match else "N/A"
 
             qualification_match = re.search(r"(?i)(?:Qualification|Education)[\s]*[:\-]?\s*(.*)", response_text)
@@ -90,10 +111,10 @@ def parse_gemini_response(response_text, action="summarize"):
             evaluation_match = re.search(r"(?i)Professional Evaluation[\s]*[:\-]?\s*(.*)", response_text, re.DOTALL)
             structured_data["evaluation"] = clean_text(evaluation_match.group(1)) if evaluation_match else "N/A"
 
-        return structured_data
-
     except Exception as e:
         return {"error": f"Error parsing response: {e}"}
+
+    return structured_data
 
 def get_gemini_response(input_text, prompt):
     model = genai.GenerativeModel('gemini-1.5-flash')
@@ -138,9 +159,15 @@ def process_resumes():
         "match": """
         Given the resume and the job description, evaluate the match and provide:
         - Percentage Match: [e.g., 80%]
-        - Justification: [1-2 concise sentences explaining the match percentage]
-        - Lacking: [only list of skills that lacks or qualifications missing from the resume for e.g.,this person lacks experince or skills that are required for the job description]
-        Ensure the response strictly follows this format.
+        - Justification: - Explain and Justify **why** the candidate is a e.g., 80% match for the job in 1-2 line.  
+                           Focus **only on matching skills, strengths and alignment** with the JD.  
+                          **Do NOT mention lacking details or missing skills** in this section.
+        - Lacking: List **only** the most critical missing skills.  
+                - **If the match is above 80%**, list **only 1-2 key gaps** (do not exceed 2).  
+                - **If the match is between 60-80%**, list **exactly 2-4 missing skills**.  
+                - **If the match is below 60%**, list **4-6 missing skills**, focusing only on major gaps.  
+                **Do not list more than the specified limit. Ensure the output strictly follows this rule.**
+
         """
     }
 
@@ -154,7 +181,7 @@ def process_resumes():
                 resume_text = extract_text_with_ocr(resume, lang='hin+guj+eng')  # Example for Hindi + Gujarati + English
 
             # 🔹 Print extracted text to check if parsing works
-            print(f"\n📄 Extracted Text from {resume.filename}:\n{resume_text}\n")
+            # print(f"\n📄 Extracted Text from {resume.filename}:\n{resume_text}\n")
 
             language = detect_language(resume_text)
 
