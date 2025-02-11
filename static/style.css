@@ -31,6 +31,7 @@ body {
 
 /* Header Styling */
 h1 {
+    color: #000000;
     font-size: 2.5rem;
     font-weight: 1000;
     text-align: center;
@@ -38,7 +39,7 @@ h1 {
     animation: slideUp 1s ease-out;
     background: linear-gradient(to right, #471d5a, #4e6ae5);
     -webkit-background-clip: text;
-    color: transparent;
+    /* color: transparent; */
 }
 /* Form Label Styling */
 .form-label {
