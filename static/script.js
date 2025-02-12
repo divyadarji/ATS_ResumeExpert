@@ -106,6 +106,42 @@ const displayResults = (results, action) => {
     output += '</ul>';
     resultsDiv.innerHTML = output;
 };
+document.getElementById('generateJD').onclick = async () => {
+    const jobRole = document.getElementById('jobRole').value.trim();
+    if (!jobRole) {
+        alert("Please enter a job role.");
+        return;
+    }
+
+    try {
+        document.getElementById('jobDescription').placeholder = "Generating JD...";
+        
+        const response = await axios.post('/generate_jd', 
+            { job_role: jobRole }, 
+            { headers: { 'Content-Type': 'application/json' } } // Ensure JSON format
+        );
+
+        if (response.data.job_description) {
+            document.getElementById('jobDescription').value = response.data.job_description;
+        } else {
+            console.error("Response error:", response.data);
+            alert("Failed to generate JD. Try again.");
+        }
+    } catch (error) {
+        console.error("Error fetching JD:", error);
+        alert("Error fetching JD: Check the console for details.");
+    } finally {
+        document.getElementById('jobDescription').placeholder = "Enter the job description here...";
+    }
+};
+
+
+// Function to clean the JD text
+const cleanText = (text) => {
+    return text.replace(/[*_]/g, '').trim();  // Removes asterisks, underscores, and trims whitespace
+};
+
+
 
 downloadCsvButton.onclick = async () => {
     const combinedData = [];

@@ -130,6 +130,35 @@ def get_gemini_response(input_text, prompt):
 @app.route("/")
 def index():
     return render_template("index.html")
+@app.route('/generate_jd', methods=['POST'])
+def generate_jd():
+    data = request.get_json()
+    job_role = data.get("job_role", "").strip()
+
+    if not job_role:
+        return jsonify({"error": "Job role is required"}), 400
+
+    try:
+        # Initialize the Gemini AI model correctly
+        model = genai.GenerativeModel("gemini-pro")  # Use a valid model name
+        response = model.generate_content(f"Generate a job description for {job_role}")
+
+        # Debugging: Log the raw response
+        print("Gemini API Raw Response:", response)
+
+        # Ensure response is valid and contains text
+        if not response or not hasattr(response, "text"):
+            print("Error: Gemini API response missing 'text'")
+            return jsonify({"error": "Invalid AI response"}), 500  
+
+        raw_jd = response.text
+        cleaned_jd = clean_text(raw_jd)  # Apply text cleaning
+
+        return jsonify({"job_description": cleaned_jd})
+
+    except Exception as e:
+        print("Full Error Traceback:", str(e))  # Print error to console
+        return jsonify({"error": str(e)}), 500
 
 @app.route("/process_resumes", methods=["POST"])
 def process_resumes():
