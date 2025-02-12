@@ -141,7 +141,7 @@ def generate_jd():
     try:
         # Initialize the Gemini AI model correctly
         model = genai.GenerativeModel("gemini-pro")  # Use a valid model name
-        response = model.generate_content(f"Generate a job description for {job_role}")
+        response = model.generate_content(f"Generate a Professional job description for {job_role} do not include company name or location")
 
         # Debugging: Log the raw response
         print("Gemini API Raw Response:", response)
