@@ -29,9 +29,9 @@ const submitForm = async (action) => {
     const numberOfResumes = formData.getAll('resumes').length;
     let estimatedTime;
     if (action === 'summarize') {
-        estimatedTime = numberOfResumes * 5;  // 4 seconds per resume for summarizing
+        estimatedTime = numberOfResumes * 5;  // 5 seconds per resume for summarizing
     } else if (action === 'match') {
-        estimatedTime = numberOfResumes * 3;  // 3 seconds per resume for percentage match
+        estimatedTime = numberOfResumes * 4 ;  // 4 seconds per resume for percentage match
     }
 
     // Start the countdown
@@ -81,11 +81,22 @@ const startCountdown = (timeInSeconds) => {
 };
 
 
-const displayResults = (results, action) => {
+const displayResults = (results, action) => { 
     let output = '<h2>Results</h2><ul class="list-group">';
+
+    if (action === 'match') {
+        // Sort results by percentage_match in descending order
+        results.sort((a, b) => {
+            let percentA = parseFloat(a.percentage_match.replace('%', '')) || 0;
+            let percentB = parseFloat(b.percentage_match.replace('%', '')) || 0;
+            return percentB - percentA;  // Highest to lowest sorting
+        });
+    }
+
     results.forEach((result) => {
         output += `<li class="list-group-item">
             <strong>Filename:</strong> ${result.filename || "N/A"}<br>`;
+
         if (action === 'summarize') {
             output += `
                 <strong>Name:</strong> ${result.name || "N/A"}<br>
@@ -101,11 +112,14 @@ const displayResults = (results, action) => {
                 <strong>Justification:</strong> ${result.justification || "N/A"}<br>
                 <strong>Lacking:</strong> ${result.lacking || "N/A"}<br>`;
         }
+
         output += `</li>`;
     });
+
     output += '</ul>';
     resultsDiv.innerHTML = output;
 };
+
 document.getElementById('generateJD').onclick = async () => {
     const jobRole = document.getElementById('jobRole').value.trim();
     if (!jobRole) {

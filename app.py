@@ -188,7 +188,7 @@ def process_resumes():
         "match": """
         Given the resume and the job description, evaluate the match and provide:
         - Percentage Match: [e.g., 80%]
-        - Justification: - Explain and Justify **why** the candidate is a e.g., 80% match for the job in 1-2 line.  
+        - Justification: - Explain and Justify **why** the candidate is a e.g., 80% match for the job in 1-2 line only positive points.  
                            Focus **only on matching skills, strengths and alignment** with the JD.  
                           **Do NOT mention lacking details or missing skills** in this section.
         - Lacking: List **only** the most critical missing skills.  
