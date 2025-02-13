@@ -105,7 +105,9 @@ const displayResults = (results, action) => {
                 <strong>Qualification:</strong> ${result.qualification || "N/A"}<br>
                 <strong>Experience:</strong> ${result.experience || "N/A"}<br>
                 <strong>Skills:</strong> ${result.skills || "N/A"}<br>
-                <strong>Evaluation:</strong> ${result.evaluation || "N/A"}<br>`;
+                <strong>Evaluation:</strong> ${result.evaluation || "N/A"}<br>
+                <strong>Personality:</strong> ${result.personal_evaluation || "N/A"}<br>`;
+
         } else if (action === 'match') {
             output += `
                 <strong>Percentage Match:</strong> ${result.percentage_match || "N/A"}<br>

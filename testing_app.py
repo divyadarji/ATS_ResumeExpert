@@ -22,9 +22,9 @@ all_resumes = [os.path.join(resume_folder, f) for f in os.listdir(resume_folder)
 
 # Job roles to test
 job_roles = [
-    # "Python Developer", "Django Developer", "Flask Developer", "Full Stack Python Developer",
-    # "Machine Learning Engineer", "Data Scientist", "React Developer", "Angular Developer",
-    # "Vue.js Developer", "Frontend Engineer", "Node.js Developer", "Java Developer",
+    "Python Developer", "Django Developer", "Flask Developer", "Full Stack Python Developer",
+    "Machine Learning Engineer", "Data Scientist", "React Developer", "Angular Developer",
+    "Vue.js Developer", "Frontend Engineer", "Node.js Developer", "Java Developer",
     "Spring Boot Developer", "PHP Developer", "Ruby on Rails Developer", "MERN Stack Developer",
     "MEAN Stack Developer", "LAMP Stack Developer", "Full Stack Engineer",
     "Android Developer", "iOS Developer", "Flutter Developer", "React Native Developer",
