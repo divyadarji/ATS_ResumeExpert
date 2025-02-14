@@ -108,8 +108,11 @@ def parse_gemini_response(response_text, action="summarize"):
             skills_match = re.search(r"(?i)Skills[\s]*[:\-]?\s*(.*)", response_text)
             structured_data["skills"] = clean_text(skills_match.group(1)) if skills_match else "N/A"
 
-            evaluation_match = re.search(r"(?i)Professional Evaluation[\s]*[:\-]?\s*(.*)", response_text, re.DOTALL)
+            evaluation_match = re.search(r"(?i)Professional Evaluation[\s]*[:\-]?\s*(.*)", response_text)
             structured_data["evaluation"] = clean_text(evaluation_match.group(1)) if evaluation_match else "N/A"
+
+            personal_evaluation = re.search(r"(?i)Personal Evaluation[\s]*[:\-]?\s*(.*)", response_text, re.DOTALL)
+            structured_data["personal_evaluation"] = clean_text(personal_evaluation.group(1)) if evaluation_match else "N/A"
 
     except Exception as e:
         return {"error": f"Error parsing response: {e}"}
@@ -182,6 +185,8 @@ def process_resumes():
         - Experience: - [Company Name], [Job Title], [Duration] ,[add all experince companies details like this]
         - Skills: [List of skills]
         - Professional Evaluation: [Professional Evaluation]
+        - Personal Evaluation: [Personal Evaluation - how is he/she . in what way he/she is good at. like a good team player, good communication skills etc.
+                                if personality not provided than you can judge him/her from resume itself. Evalution must be in small sentence/brief.]
         Ensure that Experience is formatted as 'Company Name, Role, Duration' that's it no other things should be extracted.  
         Provide a professional evaluation in 1-2 concise sentences at the end.
         """,
@@ -241,7 +246,8 @@ def process_resumes():
                 "percentage_match": "N/A" if action == "match" else None,
                 "justification": "N/A" if action == "match" else None,
                 "lacking": "N/A" if action == "match" else None,
-                "evaluation": str(e),
+                "evaluation": "N/A",
+                "personal_evaluation": str(e),
             }
 
         results.append({
@@ -260,7 +266,7 @@ def download_csv():
 
         output = StringIO()
         writer = csv.writer(output)
-        writer.writerow(["Filename", "Name", "Email", "phone", "Qualification", "Experience", "Skills", "Evaluation", "Percentage Match", "Justification", "Lacking"])
+        writer.writerow(["Filename", "Name", "Email", "phone", "Qualification", "Experience", "Skills", "Evaluation", "personal_evaluation", "Percentage Match", "Justification", "Lacking"])
 
         for result in data:
             writer.writerow([
@@ -272,6 +278,7 @@ def download_csv():
                 result.get("experience", ""),
                 result.get("skills", ""),
                 result.get("evaluation", ""),
+                result.get("personal_evaluation", ""),
                 result.get("percentage_match", ""),
                 result.get("justification", ""),
                 result.get("lacking", ""),
