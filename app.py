@@ -186,7 +186,7 @@ def process_resumes():
         - Skills: [List of skills]
         - Professional Evaluation: [Professional Evaluation]
         - Personal Evaluation: [Personal Evaluation - how is he/she . in what way he/she is good at. like a good team player, good communication skills etc.
-                                if personality not provided than you can judge him/her from resume itself. Evalution must be in small sentences/brief.]
+                                if personality not provided than you can judge him/her from resume itself.]
         Ensure that Experience is formatted as 'Company Name, Role, Duration' that's it no other things should be extracted.  
         Provide a professional evaluation in 1-2 concise sentences at the end.
         """,
