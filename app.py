@@ -87,7 +87,8 @@ def parse_gemini_response(response_text, action="summarize"):
             name_match = re.search(r"(?i)(?:Name|Full Name)[\s]*[:\-]?\s*(.*)", response_text)
             structured_data["name"] = clean_text(name_match.group(1)) if name_match else "N/A"
 
-            email_match = re.search(r"(?i)(?:\*\*)?Email[:\s]*(?:\*\*)?([\w\.\-]+@[\w\.\-]+)", response_text)
+            # Extract email
+            email_match = re.search(r"(?i)Email[:\s]*(?:\*\*)?([\w\.\-]+@[\w\.\-]+)", response_text)
             structured_data["email"] = clean_text(email_match.group(1)) if email_match else "N/A"
 
             mobile_match = re.search(
@@ -102,12 +103,18 @@ def parse_gemini_response(response_text, action="summarize"):
             qualification_match = re.search(r"(?i)(?:Qualification|Education)[\s]*[:\-]?\s*(.*)", response_text)
             structured_data["qualification"] = clean_text(qualification_match.group(1)) if qualification_match else "N/A"
 
-            experience_matches = re.findall(r"(?i)(?:\*\*)?(?:Experience|Work Experience|Career|Employment History|Professional Experience|Career History|Job Experience|Work History|Technical Experience)(?:\*\*)?[^:]*:?\s*(?:\*\*)?([\s\S]+?)(?:\*\*)?\n*(?=\n|$)", response_text)
-            structured_data["experience"] = clean_text("\n".join(experience_matches)) if experience_matches else "N/A"
+            # Improved Experience Extraction (avoids personal evaluation)
+            experience_match = re.search(
+                r"(?i)(?:Experience|Work Experience|Professional Experience)[:\-]?\s*([\s\S]+?)(?=\n\s*\n|Skills|Professional Evaluation|Personal Evaluation|$)",
+                response_text
+            )
+            structured_data["experience"] = clean_text(experience_match.group(1)) if experience_match else "N/A"
 
+            # Extract skills
             skills_match = re.search(r"(?i)Skills[\s]*[:\-]?\s*(.*)", response_text)
             structured_data["skills"] = clean_text(skills_match.group(1)) if skills_match else "N/A"
 
+            # Extract professional evaluation
             evaluation_match = re.search(r"(?i)Professional Evaluation[\s]*[:\-]?\s*(.*)", response_text)
             structured_data["evaluation"] = clean_text(evaluation_match.group(1)) if evaluation_match else "N/A"
 
@@ -118,7 +125,6 @@ def parse_gemini_response(response_text, action="summarize"):
         return {"error": f"Error parsing response: {e}"}
 
     return structured_data
-
 def get_gemini_response(input_text, prompt):
     model = genai.GenerativeModel('gemini-1.5-flash')
     
@@ -133,6 +139,7 @@ def get_gemini_response(input_text, prompt):
 @app.route("/")
 def index():
     return render_template("index.html")
+
 @app.route('/generate_jd', methods=['POST'])
 def generate_jd():
     data = request.get_json()
@@ -182,13 +189,12 @@ def process_resumes():
         - Email: [Email Address]
         - Contact NO: [Contact Number /  Mobile number]
         - Qualification: [Highest Qualification] with college
-        - Experience: - [Company Name], [Job Title], [Duration] ,[add all experince companies details like this]
+        - Experience: - [Company Name], [Job Title], [Duration]. [add all experince companies like this]
         - Skills: [List of skills]
-        - Professional Evaluation: [Professional Evaluation]
+        - Professional Evaluation: [Professional Evaluation in 1 or 2 short sentences.]
         - Personal Evaluation: [Personal Evaluation 1 or 2 short sentence- how is he/she . in what way he/she is good at. like a good team player, good communication skills etc.
-                                if personality not provided than you can judge him/her from resume itself. but dont mention resume in it.]
+                                Disclaimer:if personality not provided than you can judge him/her from resume itself but don't mention **resume** in it ok.]
         Ensure that Experience is formatted as 'Company Name, Role, Duration' that's it no other things should be extracted.  
-        Provide a professional evaluation in 1-2 concise sentences at the end.
         """,
         "match": """
         Given the resume and the job description, evaluate the match and provide:
