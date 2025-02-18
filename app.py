@@ -189,7 +189,9 @@ def process_resumes():
         - Email: [Email Address]
         - Contact NO: [Contact Number /  Mobile number]
         - Qualification: [Highest Qualification] with college
-        - Experience: - [Company Name], [Job Title], [Duration]. [add all experince companies like this]
+        - Experience: - [Company Name], [Job Title], [Duration].
+                      - [Company Name], [Job Title], [Duration].
+                      [Disclaimer: add all experince companies like this]
         - Skills: [List of skills]
         - Professional Evaluation: [Professional Evaluation in 1 or 2 short sentences.]
         - Personal Evaluation: [Personal Evaluation 1 or 2 short sentence- how is he/she . in what way he/she is good at. like a good team player, good communication skills etc.
