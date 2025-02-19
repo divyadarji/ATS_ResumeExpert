@@ -43,6 +43,13 @@ def clean_text(text):
         return re.sub(r'\*\*|\*|__|_', '', text).strip()
     return text
 
+def clean_experience(text):
+    if text:
+        # Normalize bullet points and remove empty or standalone hyphens
+        lines = [line.strip() for line in text.splitlines()]
+        cleaned_lines = [f"- {line.lstrip('-*•').strip()}" for line in lines if line.strip() and line.lstrip('-*•').strip()]
+        return '<br>'.join(cleaned_lines)
+    return "N/A"
 
 def parse_gemini_response(response_text, action="summarize"):
     structured_data = {}
@@ -108,7 +115,13 @@ def parse_gemini_response(response_text, action="summarize"):
                 r"(?i)(?:Experience|Work Experience|Professional Experience)[:\-]?\s*([\s\S]+?)(?=\n\s*\n|Skills|Professional Evaluation|Personal Evaluation|$)",
                 response_text
             )
-            structured_data["experience"] = clean_text(experience_match.group(1)) if experience_match else "N/A"
+
+            if experience_match:
+                experience_text = experience_match.group(1)
+                # Use specialized clean_experience function
+                structured_data["experience"] = clean_experience(experience_text)
+            else:
+                structured_data["experience"] = "N/A"
 
             # Extract skills
             skills_match = re.search(r"(?i)Skills[\s]*[:\-]?\s*(.*)", response_text)
@@ -125,6 +138,7 @@ def parse_gemini_response(response_text, action="summarize"):
         return {"error": f"Error parsing response: {e}"}
 
     return structured_data
+
 def get_gemini_response(input_text, prompt):
     model = genai.GenerativeModel('gemini-1.5-flash')
     
@@ -191,7 +205,7 @@ def process_resumes():
         - Qualification: [Highest Qualification] with college
         - Experience: - [Company Name], [Job Title], [Duration].
                       - [Company Name], [Job Title], [Duration].
-                      [Disclaimer: add all experince companies like this]
+                      [Disclaimer: add all experince companies like this. In the case Duration not mention then just avoid it.]
         - Skills: [List of skills]
         - Professional Evaluation: [Professional Evaluation in 1 or 2 short sentences.]
         - Personal Evaluation: [Personal Evaluation 1 or 2 short sentence- how is he/she . in what way he/she is good at. like a good team player, good communication skills etc.
