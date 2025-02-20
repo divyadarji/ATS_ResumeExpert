@@ -92,8 +92,13 @@ def parse_gemini_response(response_text, action="summarize"):
             structured_data["justification"] = clean_text(justification.group(1)) if justification else "N/A"
 
             # Extract lacking
-            lacking = re.search(r'(?i)Lacking[\s]*[:\-]?\s*(.*?)\n\n|$', response_text, re.DOTALL)
-            structured_data["lacking"] = clean_text(lacking.group(1)).replace('\n', '<br>') if lacking else "N/A"
+            lacking = re.search(
+                r'(?i)(?:[\*\s-]*Lacking[\*\s-]*:?)\s*((?:[\*\s-]*.*(?:\n|$))+)',
+                response_text,
+                re.DOTALL
+            )
+            lacking_text = lacking.group(1) if lacking else "N/A"
+            structured_data["lacking"] = clean_text(lacking_text).replace('\n', '<br>') if lacking_text != "N/A" else "N/A"
 
         else:  # Default action (summarize)
             # Extract name
