@@ -64,7 +64,7 @@ def parse_gemini_response(response_text, action="summarize"):
             # More Flexible Regex for Percentage Match
             # Updated regex for percentage_match
             percentage_match = re.search(
-                r'(?i)(?:[\*\s-]*Percentage Match[\*\s-]*:?)\s*(.*?)(?=\n\s*\n|$|\n\s*-?\s*[\*\w-]+:)',
+                r'(?i)percentage match[:\s*-]*\s*(\d{1,3}%)',
                 response_text
             )
 
@@ -75,11 +75,7 @@ def parse_gemini_response(response_text, action="summarize"):
             else:
                 structured_data["percentage_match"] = "N/A"
 
-            justification = re.search(
-                r'(?i)(?:[\*\s-]*Justification[\*\s-]*:?)\s*(.*?)(?=\n\s*\n|$|\n\s*[\*\w-]+:)',
-                response_text,
-                re.DOTALL
-            )
+            justification = re.search(r"(?i)Justification[\s]*[:\-]?\s*(.*)", response_text)
             structured_data["justification"] = clean_text(justification.group(1)) if justification else "N/A"
 
             lacking = re.search(
@@ -140,7 +136,7 @@ def parse_gemini_response(response_text, action="summarize"):
     return structured_data
 
 def get_gemini_response(input_text, prompt):
-    model = genai.GenerativeModel('gemini-1.5-flash')
+    model = genai.GenerativeModel('gemini-2.0-flash')
     
     time.sleep(2)  # Adjust delay based on API's rate limits
 
@@ -214,8 +210,8 @@ def process_resumes():
         """,
         "match": """
         Given the resume and the job description, evaluate the match and provide:
-        - Percentage Match: [e.g., 80%]
-        - Justification: - Explain and Justify **why** the candidate is a e.g., 80% match for the job in 1-2 line only positive points.  
+        - Percentage Match: [e.g., 80%. Assume that You are ATS specialist with HR role you know how much is this role is match with resume e.g. if the jd is node js developer and resume is about frontend then its clearly should be less than 20 %]
+        - Justification: - Explain and Justify **why** the candidate is a e.g., 80% match for the job in 1-2 line. Disclaimer : only positive points.  
                            Focus **only on matching skills, strengths and alignment** with the JD.  
                           **Do NOT mention lacking details or missing skills** in this section.
         - Lacking: List **only** the most critical missing skills.  
