@@ -37,18 +37,40 @@ def translate_to_english(text, source_lang):
     translator = Translator()
     return translator.translate(text, src=source_lang, dest='en').text
 
-
 def clean_text(text):
+    """
+    Cleans text by removing Markdown markers and extraneous JSON-like characters.
+    """
     if text:
-        return re.sub(r'\*\*|\*|__|_', '', text).strip()
-    return text
+        # Remove Markdown markers
+        text = re.sub(r'\*\*|\*|__|_', '', text).strip()
+        # Remove any leading/trailing quotes, brackets, braces, commas, colons, hyphens, or whitespace
+        text = re.sub(r'^[\[\]{},"\s:-]+|[\[\]{},"\s:-]+$', '', text)
+        return text
+    return "N/A"
 
 def clean_experience(text):
+    """
+    Cleans and formats the experience section:
+      - Splits text into lines, removing lines that are empty or contain only punctuation.
+      - Normalizes bullet points.
+      - Joins lines using HTML <br> tags.
+    """
     if text:
-        # Normalize bullet points and remove empty or standalone hyphens
+        # Split text into lines and trim each line.
         lines = [line.strip() for line in text.splitlines()]
-        cleaned_lines = [f"- {line.lstrip('-*•').strip()}" for line in lines if line.strip() and line.lstrip('-*•').strip()]
-        return '<br>'.join(cleaned_lines)
+        cleaned_lines = []
+        for line in lines:
+            # Remove leading bullet markers and extra whitespace.
+            line_clean = line.lstrip('-*•').strip()
+            # Skip lines that are empty or contain only punctuation/quotes/brackets.
+            if line_clean and not re.fullmatch(r'[\[\]{},"\s:-]+', line_clean):
+                cleaned_lines.append(f"- {line_clean}")
+        # Join the lines with <br> tags.
+        cleaned_text = "<br>".join(cleaned_lines)
+        # Remove stray trailing or leading characters.
+        cleaned_text = re.sub(r'^[\[\]{},"\s]+|[\[\]{},"\s]+$', '', cleaned_text)
+        return cleaned_text
     return "N/A"
 
 def parse_gemini_response(response_text, action="summarize"):
@@ -61,63 +83,43 @@ def parse_gemini_response(response_text, action="summarize"):
             response_text = response_text.encode('utf-8').decode('utf-8')
             response_text = unicodedata.normalize('NFKC', response_text)
 
-            # More Flexible Regex for Percentage Match
-            # Updated regex for percentage_match
-            percentage_match = re.search(
-                r'(?i)percentage match[:\s*-]*\s*(\d{1,3}%)',
-                response_text
-            )
+            # Extract percentage match
+            percentage_match = re.search(r'(?i)percentage match[:\s*-]*\s*(\d{1,3}%)', response_text)
+            structured_data["percentage_match"] = clean_text(percentage_match.group(1)) if percentage_match else "N/A"
 
-            if percentage_match:
-                percentage = percentage_match.group(1)
-                cleaned_percentage = clean_text(percentage)
-                structured_data["percentage_match"] = cleaned_percentage
-            else:
-                structured_data["percentage_match"] = "N/A"
-
+            # Extract justification
             justification = re.search(r"(?i)Justification[\s]*[:\-]?\s*(.*)", response_text)
             structured_data["justification"] = clean_text(justification.group(1)) if justification else "N/A"
 
-            lacking = re.search(
-                r'(?i)(?:[\*\s-]*Lacking[\*\s-]*:?)\s*((?:[\*\s-]*.*(?:\n|$))+)',
-                response_text,
-                re.DOTALL
-            )
-            lacking_text = lacking.group(1) if lacking else "N/A"
-            structured_data["lacking"] = clean_text(lacking_text).replace('\n', '<br>') if lacking_text != "N/A" else "N/A"
+            # Extract lacking
+            lacking = re.search(r'(?i)Lacking[\s]*[:\-]?\s*(.*?)\n\n|$', response_text, re.DOTALL)
+            structured_data["lacking"] = clean_text(lacking.group(1)).replace('\n', '<br>') if lacking else "N/A"
 
         else:  # Default action (summarize)
+            # Extract name
             name_match = re.search(r"(?i)(?:Name|Full Name)[\s]*[:\-]?\s*(.*)", response_text)
             structured_data["name"] = clean_text(name_match.group(1)) if name_match else "N/A"
 
             # Extract email
-            email_match = re.search(r"(?i)Email[:\s]*(?:\*\*)?([\w\.\-]+@[\w\.\-]+)", response_text)
+            email_match = re.search(r"(?i)Email[:\s*-]*\s*([\w\.\-]+@[\w\.\-]+)", response_text)
             structured_data["email"] = clean_text(email_match.group(1)) if email_match else "N/A"
 
+            # Extract phone
             mobile_match = re.search(
-                r"(?i)(?:\*\*)?(?:\bMobile\s*Number\b|\bM\s*No\b|\bPhone\b|\bContact\b|\bCell\b|\bMobile\b|Contact\s*NO)?[\s:\-]*"
-                r"(\+?\d{1,3}[\s-]?"
-                r"\(?\d{1,4}\)?[\s-]?"
-                r"\d{2,4}[\s-]?\d{2,4}[\s-]?\d{2,4}|"
-                r"\(?\d{2,4}\)?[\s-]?\d{3,4}[\s-]?\d{3,4}"
-                r")", response_text)
+                r"(?i)(?:Mobile\s*Number|M\s*No|Phone|Contact|Cell|Mobile|Contact\s*NO)?[\s:\-]*"
+                r"(\+?\d{1,3}[\s-]?\(?\d{1,4}\)?[\s-]?\d{2,4}[\s-]?\d{2,4}[\s-]?\d{2,4}|"
+                r"\(?\d{2,4}\)?[\s-]?\d{3,4}[\s-]?\d{3,4})", response_text)
             structured_data["phone"] = clean_text(mobile_match.group(1)) if mobile_match else "N/A"
 
+            # Extract qualification
             qualification_match = re.search(r"(?i)(?:Qualification|Education)[\s]*[:\-]?\s*(.*)", response_text)
             structured_data["qualification"] = clean_text(qualification_match.group(1)) if qualification_match else "N/A"
 
-            # Improved Experience Extraction (avoids personal evaluation)
+            # Extract experience
             experience_match = re.search(
-                r"(?i)(?:Experience|Work Experience|Professional Experience)[:\-]?\s*([\s\S]+?)(?=\n\s*\n|Skills|Professional Evaluation|Personal Evaluation|$)",
-                response_text
-            )
-
-            if experience_match:
-                experience_text = experience_match.group(1)
-                # Use specialized clean_experience function
-                structured_data["experience"] = clean_experience(experience_text)
-            else:
-                structured_data["experience"] = "N/A"
+                r"(?i)(?:Experience|Work Experience|Professional Experience)[:\s*-]*([\s\S]+?)(?=\n\s*\n|Skills|Professional Evaluation|Personal Evaluation|$)",
+                response_text)
+            structured_data["experience"] = clean_experience(experience_match.group(1)) if experience_match else "N/A"
 
             # Extract skills
             skills_match = re.search(r"(?i)Skills[\s]*[:\-]?\s*(.*)", response_text)
@@ -127,8 +129,9 @@ def parse_gemini_response(response_text, action="summarize"):
             evaluation_match = re.search(r"(?i)Professional Evaluation[\s]*[:\-]?\s*(.*)", response_text)
             structured_data["evaluation"] = clean_text(evaluation_match.group(1)) if evaluation_match else "N/A"
 
+            # Extract personal evaluation
             personal_evaluation = re.search(r"(?i)Personal Evaluation[\s]*[:\-]?\s*(.*)", response_text, re.DOTALL)
-            structured_data["personal_evaluation"] = clean_text(personal_evaluation.group(1)) if evaluation_match else "N/A"
+            structured_data["personal_evaluation"] = clean_text(personal_evaluation.group(1)) if personal_evaluation else "N/A"
 
     except Exception as e:
         return {"error": f"Error parsing response: {e}"}
@@ -207,6 +210,7 @@ def process_resumes():
         - Personal Evaluation: [Personal Evaluation 1 or 2 short sentence- how is he/she . in what way he/she is good at. like a good team player, good communication skills etc.
                                 Disclaimer:if personality not provided than you can judge him/her from resume itself but don't mention **resume** in it ok.]
         Ensure that Experience is formatted as 'Company Name, Role, Duration' that's it no other things should be extracted.  
+        Disclaimer: I want to see the extracted information in the format of the above example.
         """,
         "match": """
         Given the resume and the job description, evaluate the match and provide:
