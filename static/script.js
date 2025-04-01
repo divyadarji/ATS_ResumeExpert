@@ -4,9 +4,14 @@ const loader = document.getElementById('loader');
 const timeRemainingElement = document.getElementById('timeRemaining');
 const resultsDiv = document.getElementById('results');
 const downloadCsvButton = document.getElementById('downloadCsvButton');
+const downloadFilteredCsvButton = document.getElementById('downloadFilteredCsvButton');
+const categoryFilters = document.getElementById('categoryFilters');
 
 let summarizedData = [];
 let matchData = [];
+let categorizedResults = {};
+let currentAction = '';
+let countdownInterval;
 
 summarizeButton.onclick = () => submitForm('summarize');
 matchButton.onclick = () => {
@@ -21,20 +26,17 @@ matchButton.onclick = () => {
 const submitForm = async (action) => {
     const formData = new FormData(document.getElementById('resumeForm'));
     formData.append('action', action);
+    currentAction = action;
 
     loader.style.display = 'block';
     downloadCsvButton.style.display = 'none';
+    downloadFilteredCsvButton.style.display = 'none';
+    categoryFilters.style.display = 'none';
     resultsDiv.innerHTML = '';
 
     const numberOfResumes = formData.getAll('resumes').length;
-    let estimatedTime;
-    if (action === 'summarize') {
-        estimatedTime = numberOfResumes * 5;  // 5 seconds per resume for summarizing
-    } else if (action === 'match') {
-        estimatedTime = numberOfResumes * 4 ;  // 4 seconds per resume for percentage match
-    }
+    let estimatedTime = action === 'summarize' ? numberOfResumes * 5 : numberOfResumes * 4;
 
-    // Start the countdown
     startCountdown(estimatedTime);
 
     try {
@@ -42,7 +44,9 @@ const submitForm = async (action) => {
             headers: { 'Content-Type': 'multipart/form-data' },
         });
 
-        const results = response.data;
+        const data = response.data;
+        const results = data.results || [];
+        categorizedResults = data.categorized_results || {};
 
         if (action === 'summarize') {
             summarizedData = results;
@@ -51,7 +55,11 @@ const submitForm = async (action) => {
         }
 
         displayResults(results, action);
+        categoryFilters.style.display = 'block';
         downloadCsvButton.style.display = 'inline-block';
+        downloadFilteredCsvButton.style.display = 'inline-block';
+
+        setupCategoryFilters();
     } catch (err) {
         alert('Error processing resumes. Please try again.');
     } finally {
@@ -63,16 +71,11 @@ const submitForm = async (action) => {
 
 const startCountdown = (timeInSeconds) => {
     let timeLeft = timeInSeconds;
-
     countdownInterval = setInterval(() => {
-        let minutes = Math.floor(timeLeft / 60);  
-        let seconds = timeLeft % 60;  
-
-        // Update the time display in minutes and seconds format
+        let minutes = Math.floor(timeLeft / 60);
+        let seconds = timeLeft % 60;
         timeRemainingElement.innerHTML = `Estimated Time Remaining: ${minutes} minute${minutes !== 1 ? 's' : ''} ${seconds} second${seconds !== 1 ? 's' : ''}`;
-
         timeLeft--;
-
         if (timeLeft < 0) {
             clearInterval(countdownInterval);
             timeRemainingElement.innerHTML = 'Processing complete!';
@@ -80,22 +83,22 @@ const startCountdown = (timeInSeconds) => {
     }, 1000);
 };
 
-
-const displayResults = (results, action) => { 
+const displayResults = (results, action) => {
     let output = '<h2>Results</h2><ul class="list-group">';
-
+    
     if (action === 'match') {
-        // Sort results by percentage_match in descending order
         results.sort((a, b) => {
             let percentA = parseFloat(a.percentage_match.replace('%', '')) || 0;
             let percentB = parseFloat(b.percentage_match.replace('%', '')) || 0;
-            return percentB - percentA;  // Highest to lowest sorting
+            return percentB - percentA;
         });
     }
 
     results.forEach((result) => {
         output += `<li class="list-group-item">
-            <strong>Filename:</strong> ${result.filename || "N/A"}<br>`;
+            <strong>Filename:</strong> ${result.filename || "N/A"}<br>
+            <strong>Categories:</strong> ${result.categories.join(', ') || "N/A"}<br>
+            <strong>Specific Role:</strong> ${result.specific_role || "N/A"}<br>`;
 
         if (action === 'summarize') {
             output += `
@@ -107,7 +110,6 @@ const displayResults = (results, action) => {
                 <strong>Skills:</strong> ${result.skills || "N/A"}<br>
                 <strong>Evaluation:</strong> ${result.evaluation || "N/A"}<br>
                 <strong>Personality:</strong> ${result.personal_evaluation || "N/A"}<br>`;
-
         } else if (action === 'match') {
             output += `
                 <strong>Percentage Match:</strong> ${result.percentage_match || "N/A"}<br>
@@ -122,6 +124,24 @@ const displayResults = (results, action) => {
     resultsDiv.innerHTML = output;
 };
 
+const setupCategoryFilters = () => {
+    const buttons = document.querySelectorAll('.category-btn');
+    buttons.forEach(button => {
+        button.onclick = () => {
+            const category = button.getAttribute('data-category');
+            buttons.forEach(btn => btn.classList.remove('active'));
+            button.classList.add('active');
+
+            if (category) {
+                const filteredResults = categorizedResults[category] || [];
+                displayResults(filteredResults, currentAction);
+            } else {
+                displayResults(currentAction === 'summarize' ? summarizedData : matchData, currentAction);
+            }
+        };
+    });
+};
+
 document.getElementById('generateJD').onclick = async () => {
     const jobRole = document.getElementById('jobRole').value.trim();
     if (!jobRole) {
@@ -131,33 +151,22 @@ document.getElementById('generateJD').onclick = async () => {
 
     try {
         document.getElementById('jobDescription').placeholder = "Generating JD...";
-        
         const response = await axios.post('/generate_jd', 
             { job_role: jobRole }, 
-            { headers: { 'Content-Type': 'application/json' } } // Ensure JSON format
+            { headers: { 'Content-Type': 'application/json' } }
         );
 
         if (response.data.job_description) {
             document.getElementById('jobDescription').value = response.data.job_description;
         } else {
-            console.error("Response error:", response.data);
             alert("Failed to generate JD. Try again.");
         }
     } catch (error) {
-        console.error("Error fetching JD:", error);
         alert("Error fetching JD: Check the console for details.");
     } finally {
         document.getElementById('jobDescription').placeholder = "Enter the job description here...";
     }
 };
-
-
-// Function to clean the JD text
-const cleanText = (text) => {
-    return text.replace(/[*_]/g, '').trim();  // Removes asterisks, underscores, and trims whitespace
-};
-
-
 
 downloadCsvButton.onclick = async () => {
     const combinedData = [];
@@ -184,11 +193,61 @@ downloadCsvButton.onclick = async () => {
         const a = document.createElement('a');
         a.style.display = 'none';
         a.href = url;
-        a.download = 'summary.csv';
+        a.download = 'summary_all.csv';
         document.body.appendChild(a);
         a.click();
         window.URL.revokeObjectURL(url);
     } catch (err) {
         alert('Error downloading CSV. Please try again.');
+    }
+};
+
+downloadFilteredCsvButton.onclick = async () => {
+    const selectedCategories = Array.from(document.querySelectorAll('.category-checkbox:checked'))
+        .map(checkbox => checkbox.value);
+
+    if (selectedCategories.length === 0) {
+        alert('Please select at least one category to download.');
+        return;
+    }
+
+    const filteredData = [];
+    summarizedData.forEach((summarized) => {
+        const match = matchData.find((m) => m.filename === summarized.filename) || {};
+        const combined = {
+            ...summarized,
+            percentage_match: match.percentage_match || "N/A",
+            justification: match.justification || "N/A",
+            lacking: match.lacking || "N/A",
+        };
+        if (summarized.categories.some(category => selectedCategories.includes(category))) {
+            filteredData.push(combined);
+        }
+    });
+
+    const dataToExport = filteredData.length > 0 ? filteredData : matchData.filter(item =>
+        item.categories.some(category => selectedCategories.includes(category))
+    );
+
+    try {
+        const response = await axios.post('/download_filtered_csv', {
+            summarized_data: dataToExport,
+            categories: selectedCategories
+        }, {
+            headers: { 'Content-Type': 'application/json' },
+            responseType: 'blob',
+        });
+
+        const blob = new Blob([response.data], { type: 'text/csv' });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.style.display = 'none';
+        a.href = url;
+        a.download = `summary_${selectedCategories.join('_')}.csv`;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+    } catch (err) {
+        alert('Error downloading filtered CSV. Please try again.');
     }
 };

@@ -1,6 +1,6 @@
 /* General Body Styling */
-html{
-    height:100%;
+html {
+    height: 100%;
     background: linear-gradient(135deg, #121826, #181a25, #585f98);
 }
 body {
@@ -14,7 +14,6 @@ body {
     justify-content: center;
     align-items: center;
     overflow-y: auto;
-    /* overflow: hidden; */
 }
 
 /* Container Styling */
@@ -24,7 +23,6 @@ body {
     border-radius: 12px;
     box-shadow: 0 0 12px rgba(118, 75, 162, 0.7);
     margin-top: 50px;
-    /* max-width: 100%; */
     width: 100%;
     animation: fadeIn 1s ease-in-out;
 }
@@ -39,8 +37,8 @@ h1 {
     animation: slideUp 1s ease-out;
     background: linear-gradient(to right, #471d5a, #4e6ae5);
     -webkit-background-clip: text;
-    /* color: transparent; */
 }
+
 /* Form Label Styling */
 .form-label {
     font-weight: 600;
@@ -71,7 +69,6 @@ h1 {
 
 .btn-primary {
     background-color: #2575fc;
-    /* font-weight: bolder; */
 }
 
 .btn-primary:hover {
@@ -81,7 +78,6 @@ h1 {
 
 .btn-secondary {
     background-color: #6a11cb;
-    /* font-weight: bolder; */
 }
 
 .btn-secondary:hover {
@@ -142,9 +138,6 @@ h1 {
     box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
     cursor: pointer;
 }
-#timeRemaining{
-    animation: ease-in-out;
-}
 
 /* Animations for hover effect */
 @keyframes resultHoverEffect {
@@ -162,10 +155,102 @@ h1 {
     animation: resultHoverEffect 0.3s ease-in-out;
 }
 
-
 /* Form Control and Button Spacing */
 .form-control, .btn {
     margin-bottom: 20px;
+}
+
+/* Category Button Styling */
+.category-btn {
+    margin: 5px;
+    padding: 10px 20px;
+    border-radius: 20px;
+    background: linear-gradient(135deg, #2575fc, #6a11cb);
+    color: white;
+    font-weight: 500;
+    border: none;
+    transition: transform 0.2s ease, background 0.3s ease, box-shadow 0.3s ease;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+.category-btn:hover {
+    background: linear-gradient(135deg, #0056b3, #5a0a99);
+    transform: translateY(-3px) scale(1.05);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+    cursor: pointer;
+}
+
+.category-btn.active {
+    background: linear-gradient(135deg, #1a3c7f, #3e0778);
+    color: #fff;
+    font-weight: 600;
+    transform: scale(1.02);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
+/* Checkbox Container Styling */
+#categoryCheckboxes {
+    background: linear-gradient(135deg, #ffffff, #e6f0fa); /* Light gradient for contrast */
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    margin-top: 15px;
+    animation: fadeIn 1s ease-in-out;
+    border: 1px solid rgba(37, 117, 252, 0.3); /* Subtle border */
+}
+
+/* Checkbox Styling */
+.form-check-input.category-checkbox {
+    appearance: none; /* Remove default checkbox style */
+    width: 20px;
+    height: 20px;
+    border: 2px solid #2575fc; /* Blue border */
+    border-radius: 5px;
+    background-color: #fff;
+    cursor: pointer;
+    transition: background-color 0.2s ease, transform 0.2s ease;
+    margin-right: 10px;
+    vertical-align: middle;
+}
+
+.form-check-input.category-checkbox:checked {
+    background: linear-gradient(135deg, #2575fc, #6a11cb); /* Gradient fill when checked */
+    border: none;
+    position: relative;
+}
+
+.form-check-input.category-checkbox:checked::after {
+    content: '\2713'; /* Checkmark */
+    color: white;
+    font-size: 14px;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+
+.form-check-input.category-checkbox:hover {
+    transform: scale(1.1);
+    box-shadow: 0 0 5px rgba(37, 117, 252, 0.5);
+}
+
+/* Label Styling */
+.form-check-label {
+    color: #1a1a1a; /* Darker text for contrast on light background */
+    font-weight: 500;
+    font-size: 1rem;
+    transition: color 0.2s ease;
+    cursor: pointer;
+}
+
+.form-check-label:hover {
+    color: #2575fc; /* Blue hover effect */
+}
+
+/* Inline Checkbox Layout */
+.form-check-inline {
+    margin-right: 20px;
+    margin-bottom: 10px;
 }
 
 /* Animations */
@@ -200,3 +285,7 @@ h1 {
     }
 }
 
+.results ul {
+    max-height: 500px;
+    overflow-y: auto;
+}
