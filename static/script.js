@@ -4,6 +4,7 @@ const loader = document.getElementById('loader');
 const timeRemainingElement = document.getElementById('timeRemaining');
 const resultsDiv = document.getElementById('results');
 const downloadCsvButton = document.getElementById('downloadCsvButton');
+const downloadFilteredCsvButton = document.getElementById('downloadFilteredCsvButton');
 const categoryFilters = document.getElementById('categoryFilters');
 
 let summarizedData = [];
@@ -29,6 +30,7 @@ const submitForm = async (action) => {
 
     loader.style.display = 'block';
     downloadCsvButton.style.display = 'none';
+    downloadFilteredCsvButton.style.display = 'none';
     categoryFilters.style.display = 'none';
     resultsDiv.innerHTML = '';
 
@@ -55,6 +57,7 @@ const submitForm = async (action) => {
         displayResults(results, action);
         categoryFilters.style.display = 'block';
         downloadCsvButton.style.display = 'inline-block';
+        downloadFilteredCsvButton.style.display = 'inline-block';
 
         setupCategoryFilters();
     } catch (err) {
@@ -190,11 +193,61 @@ downloadCsvButton.onclick = async () => {
         const a = document.createElement('a');
         a.style.display = 'none';
         a.href = url;
-        a.download = 'summary.csv';
+        a.download = 'summary_all.csv';
         document.body.appendChild(a);
         a.click();
         window.URL.revokeObjectURL(url);
     } catch (err) {
         alert('Error downloading CSV. Please try again.');
+    }
+};
+
+downloadFilteredCsvButton.onclick = async () => {
+    const selectedCategories = Array.from(document.querySelectorAll('.category-checkbox:checked'))
+        .map(checkbox => checkbox.value);
+
+    if (selectedCategories.length === 0) {
+        alert('Please select at least one category to download.');
+        return;
+    }
+
+    const filteredData = [];
+    summarizedData.forEach((summarized) => {
+        const match = matchData.find((m) => m.filename === summarized.filename) || {};
+        const combined = {
+            ...summarized,
+            percentage_match: match.percentage_match || "N/A",
+            justification: match.justification || "N/A",
+            lacking: match.lacking || "N/A",
+        };
+        if (summarized.categories.some(category => selectedCategories.includes(category))) {
+            filteredData.push(combined);
+        }
+    });
+
+    const dataToExport = filteredData.length > 0 ? filteredData : matchData.filter(item =>
+        item.categories.some(category => selectedCategories.includes(category))
+    );
+
+    try {
+        const response = await axios.post('/download_filtered_csv', {
+            summarized_data: dataToExport,
+            categories: selectedCategories
+        }, {
+            headers: { 'Content-Type': 'application/json' },
+            responseType: 'blob',
+        });
+
+        const blob = new Blob([response.data], { type: 'text/csv' });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.style.display = 'none';
+        a.href = url;
+        a.download = `summary_${selectedCategories.join('_')}.csv`;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+    } catch (err) {
+        alert('Error downloading filtered CSV. Please try again.');
     }
 };

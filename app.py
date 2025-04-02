@@ -56,47 +56,97 @@ def clean_text(text):
         return text
     return ""
 
-def clean_experience(text):
-    if text:
-        lines = [line.strip() for line in text.splitlines()]
-        cleaned_lines = []
-        for line in lines:
-            line_clean = line.lstrip('-*•').strip()
-            if line_clean and not re.fullmatch(r'[\[\]{},"\s:-]+', line_clean):
-                cleaned_lines.append(line_clean)
-        return " | ".join(cleaned_lines)  # Use | as delimiter instead of <br>
-    return ""
-
 def standardize_phone(phone):
     if not phone or phone == "N/A":
         return ""
-    # Remove non-digits except + and standardize to +91-XXXXXXXXXX
+    # Remove all non-digits except the leading +
     digits = re.sub(r'[^\d+]', '', phone)
+    # If the number starts with +91 and has 13 digits, format it
     if digits.startswith('+91') and len(digits) == 13:
         return f"{digits[:3]}-{digits[3:]}"
+    # If it's a 10-digit number, assume it's Indian and add +91
     elif len(digits) == 10:
         return f"+91-{digits}"
-    return phone  # Return original if format can't be determined
+    # If it starts with 91 (no +), add the +
+    elif digits.startswith('91') and len(digits) == 12:
+        return f"+91-{digits[2:]}"
+    # If none of the above, return the original (cleaned) phone number
+    return phone
+
+def parse_date(date_str):
+    """Parse various date formats into a datetime object."""
+    if not date_str or date_str.lower() in ["present", "till date", "ongoing"]:
+        return datetime(2025, 4, 1)  # Use current date as April 1, 2025
+    month_map = {
+        'jan': 1, 'feb': 2, 'mar': 3, 'apr': 4, 'may': 5, 'jun': 6,
+        'jul': 7, 'aug': 8, 'sep': 9, 'oct': 10, 'nov': 11, 'dec': 12,
+        'january': 1, 'february': 2, 'march': 3, 'april': 4, 'june': 6,
+        'july': 7, 'august': 8, 'september': 9, 'october': 10, 'november': 11, 'december': 12
+    }
+    date_str = date_str.lower().strip()
+    
+    # MM/YYYY or MM-YYYY
+    if re.match(r'(\d{2})[/-](\d{4})', date_str):
+        month, year = map(int, re.match(r'(\d{2})[/-](\d{4})', date_str).groups())
+        return datetime(year, month, 1)
+    # Month YYYY or Month-YYYY
+    elif re.match(r'([a-z]+)[-\s]+(\d{4})', date_str):
+        month_str, year = re.match(r'([a-z]+)[-\s]+(\d{4})', date_str).groups()
+        month = month_map.get(month_str, 1)
+        return datetime(int(year), month, 1)
+    # YYYY
+    elif re.match(r'^\d{4}$', date_str):
+        return datetime(int(date_str), 1, 1)
+    return None
 
 def calculate_experience_years(experience):
+    """Calculate total experience in years from a pipe-delimited experience string."""
     if not experience or experience == "":
         return 0
+    
     periods = experience.split(" | ")
-    total_months = 0
-    current_year = datetime.now().year
+    date_pairs = []
+    
     for period in periods:
-        match = re.search(r'(\d{2}/\d{4}|\d{4})\s*-\s*(\d{2}/\d{4}|\d{4}|Present)', period, re.IGNORECASE)
+        # Match various date range formats
+        match = re.search(r'(\w+\s*\d{4}|\d{2}/\d{4}|\d{4})\s*[-–—]\s*(\w+\s*\d{4}|\d{2}/\d{4}|\d{4}|present|till date)', period, re.IGNORECASE)
         if match:
-            start, end = match.groups()
-            if "Present" in end:
-                end = f"{datetime.now().strftime('%m/%Y')}"
-            try:
-                start_date = datetime.strptime(start, '%m/%Y' if '/' in start else '%Y')
-                end_date = datetime.strptime(end, '%m/%Y' if '/' in end else '%Y')
-                months = (end_date.year - start_date.year) * 12 + (end_date.month - start_date.month)
-                total_months += max(0, months)
-            except ValueError:
-                continue
+            start_str, end_str = match.groups()
+            start_date = parse_date(start_str)
+            end_date = parse_date(end_str)
+            if start_date and end_date and start_date <= end_date:
+                date_pairs.append((start_date, end_date))
+        # Handle single year (e.g., "2023")
+        else:
+            year_match = re.search(r'(\d{4})', period)
+            if year_match:
+                year = int(year_match.group(1))
+                start_date = datetime(year, 1, 1)
+                end_date = datetime(year, 12, 31)
+                date_pairs.append((start_date, end_date))
+    
+    if not date_pairs:
+        return 0
+    
+    # Sort by start date and calculate total months without overlaps
+    date_pairs.sort(key=lambda x: x[0])
+    total_months = 0
+    current_start = date_pairs[0][0]
+    current_end = date_pairs[0][1]
+    
+    for start, end in date_pairs[1:]:
+        if start <= current_end:
+            current_end = max(current_end, end)  # Merge overlapping periods
+        else:
+            months = (current_end.year - current_start.year) * 12 + (current_end.month - current_start.month)
+            total_months += max(0, months)
+            current_start = start
+            current_end = end
+    
+    # Add the last period
+    months = (current_end.year - current_start.year) * 12 + (current_end.month - current_start.month)
+    total_months += max(0, months)
+    
     return round(total_months / 12, 1)
 
 def categorize_resume(primary_role, skills=""):
@@ -161,7 +211,7 @@ def parse_gemini_response(response_text, action="summarize"):
             lacking = re.search(r'(?i)(?:[\*\s-]*Lacking[\*\s-]*:?)\s*((?:[\*\s-]*.*(?:\n|$))+)',
                               response_text, re.DOTALL)
             lacking_text = lacking.group(1) if lacking else ""
-            structured_data["lacking"] = " | ".join([clean_text(line.strip('-* ')) for line in lacking_text.splitlines() if line.strip()]) if lacking_text else ""
+            structured_data["lacking"] = lacking_text.strip()
         else:
             name_match = re.search(r"(?i)(?:Name|Full Name)[\s]*[:\-]?\s*(.*)", response_text)
             structured_data["name"] = clean_text(name_match.group(1)) if name_match else ""
@@ -177,13 +227,13 @@ def parse_gemini_response(response_text, action="summarize"):
             experience_match = re.search(
                 r"(?i)(?:Experience|Work Experience|Professional Experience)[:\s*-]*([\s\S]+?)(?=\n\s*\n|Skills|Professional Evaluation|Personal Evaluation|$)",
                 response_text)
-            structured_data["experience"] = clean_experience(experience_match.group(1)) if experience_match else ""
+            structured_data["experience"] = experience_match.group(1).strip() if experience_match else ""
             skills_match = re.search(r"(?i)Skills[\s]*[:\-]?\s*(.*)", response_text)
-            structured_data["skills"] = " | ".join([clean_text(s) for s in skills_match.group(1).split(',')]) if skills_match else ""
+            structured_data["skills"] = clean_text(skills_match.group(1)) if skills_match else ""
             evaluation_match = re.search(r"(?i)Professional Evaluation[\s]*[:\-]?\s*(.*)", response_text)
             structured_data["evaluation"] = clean_text(evaluation_match.group(1)) if evaluation_match else ""
             personal_evaluation = re.search(r"(?i)Personal Evaluation[\s]*[:\-]?\s*(.*)", response_text, re.DOTALL)
-            structured_data["personal_evaluation"] = re.sub(r"- Primary Role:.*$", "", clean_text(personal_evaluation.group(1))).strip() if personal_evaluation else ""
+            structured_data["personal_evaluation"] = clean_text(personal_evaluation.group(1)) if personal_evaluation else ""
             role_match = re.search(r"(?i)Primary Role[\s]*[:\-]?\s*(.*)", response_text)
             structured_data["primary_role"] = clean_text(role_match.group(1)) if role_match else ""
 
@@ -437,10 +487,13 @@ def download_csv():
         output = StringIO()
         writer = csv.writer(output)
         writer.writerow(["Filename", "Categories", "Specific Role", "Name", "Email", "Phone", "Qualification", 
-                         "Experience", "Total Experience (Years)", "Skills", "Evaluation", "Personal Evaluation", 
-                         "Percentage Match", "Lacking"])
+                         "Experience", "Total Experience (Years)", "Skills", "Percentage Match", "Lacking"])
 
         for result in data:
+            experience = result.get("experience", "").replace("<br>", " | ").replace("\n", " | ").strip()
+            skills = result.get("skills", "").replace(", ", " | ").replace(",", " | ").strip()
+            lacking = result.get("lacking", "").replace("<br>", " | ").replace("\n", " | ").replace("- ", "").strip()
+
             writer.writerow([
                 result.get("filename", ""),
                 ", ".join(result.get("categories", [])),
@@ -449,13 +502,11 @@ def download_csv():
                 result.get("email", ""),
                 result.get("phone", ""),
                 result.get("qualification", ""),
-                result.get("experience", ""),
-                calculate_experience_years(result.get("experience", "")),
-                result.get("skills", ""),
-                result.get("evaluation", ""),
-                result.get("personal_evaluation", ""),
+                experience,
+                calculate_experience_years(experience),
+                skills,
                 result.get("percentage_match", ""),
-                result.get("lacking", ""),
+                lacking
             ])
 
         output.seek(0)
@@ -484,10 +535,13 @@ def download_filtered_csv():
         output = StringIO()
         writer = csv.writer(output)
         writer.writerow(["Filename", "Categories", "Specific Role", "Name", "Email", "Phone", "Qualification", 
-                         "Experience", "Total Experience (Years)", "Skills", "Evaluation", "Personal Evaluation", 
-                         "Percentage Match", "Lacking"])
+                         "Experience", "Total Experience (Years)", "Skills", "Percentage Match", "Lacking"])
 
         for result in filtered_data:
+            experience = result.get("experience", "").replace("<br>", " | ").replace("\n", " | ").strip()
+            skills = result.get("skills", "").replace(", ", " | ").replace(",", " | ").strip()
+            lacking = result.get("lacking", "").replace("<br>", " | ").replace("\n", " | ").replace("- ", "").strip()
+
             writer.writerow([
                 result.get("filename", ""),
                 ", ".join(result.get("categories", [])),
@@ -496,13 +550,11 @@ def download_filtered_csv():
                 result.get("email", ""),
                 result.get("phone", ""),
                 result.get("qualification", ""),
-                result.get("experience", ""),
-                calculate_experience_years(result.get("experience", "")),
-                result.get("skills", ""),
-                result.get("evaluation", ""),
-                result.get("personal_evaluation", ""),
+                experience,
+                calculate_experience_years(experience),
+                skills,
                 result.get("percentage_match", ""),
-                result.get("lacking", ""),
+                lacking
             ])
 
         output.seek(0)
