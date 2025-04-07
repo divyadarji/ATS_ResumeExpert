@@ -8,6 +8,11 @@ const downloadFilteredCsvButton = document.getElementById('downloadFilteredCsvBu
 const shortlistButton = document.getElementById('shortlistButton');
 const categoryFilters = document.getElementById('categoryFilters');
 const percentageThresholdSelect = document.getElementById('percentageThreshold');
+const dropzone = document.getElementById('dropzone');
+const fileInput = document.getElementById('resumes');
+const fileList = document.getElementById('file-list');
+const dropzoneText = document.getElementById('dropzone-text');
+const fileCount = document.getElementById('file-count');
 
 let summarizedData = [];
 let matchData = [];
@@ -15,6 +20,8 @@ let categorizedResults = {};
 let currentAction = '';
 let countdownInterval;
 let currentCategory = ''; // Track the currently selected category
+
+
 
 summarizeButton.onclick = () => submitForm('summarize');
 matchButton.onclick = () => {
@@ -91,6 +98,56 @@ const startCountdown = (timeInSeconds) => {
     }, 1000);
 };
 
+// Function to format experience text
+const formatExperience = (experienceText) => {
+    if (!experienceText || experienceText === "N/A") return "N/A";
+
+    // Split on newlines (\n), "(n -", or " - " (for cases like the second candidate)
+    let experiences = experienceText.includes("(n -")
+        ? experienceText.split("(n -")
+        : experienceText.includes(" - ")
+            ? experienceText.split(" - ").filter(e => e.trim() !== "")
+            : experienceText.split("\n").filter(e => e.trim() !== "");
+
+    // Clean and format each experience
+    const formattedExperiences = experiences.map(exp => {
+        // Remove unwanted symbols
+        let cleanExp = exp.replace(/[\*\[\]":]+/g, "").trim();
+
+        // Split into components (assuming format: "Company, Role, Duration")
+        const parts = cleanExp.split(", ").map(part => part.trim());
+        if (parts.length >= 3) {
+            const company = parts[0];
+            const role = parts[1];
+            const duration = parts.slice(2).join(", "); // Join remaining parts as duration
+            return `${company} - ${role}, ${duration}`;
+        }
+        return cleanExp; // Fallback if parsing fails
+    });
+
+    // Join with <br> for new lines
+    return formattedExperiences.join("<br>");
+};
+
+// Function to format lacking text
+const formatLacking = (lackingText) => {
+    if (!lackingText || lackingText === "N/A") return "N/A";
+
+    // Split on newlines (\n) or use numbering pattern (e.g., "2.")
+    let items = lackingText.includes("\n")
+        ? lackingText.split("\n")
+        : lackingText.split(/(?=\d+\.\s)/).filter(item => item.trim() !== "");
+
+    // Clean and format each item
+    const formattedItems = items.map(item => {
+        // Remove unwanted symbols
+        return item.replace(/[\*\[\]":]+/g, "").trim();
+    });
+
+    // Join with <br> for new lines
+    return formattedItems.join("<br>");
+};
+
 const displayResults = (results, action) => {
     const percentageThreshold = parseFloat(percentageThresholdSelect.value) || 0;
     const selectedCategories = Array.from(document.querySelectorAll('.category-checkbox:checked'))
@@ -134,29 +191,30 @@ const displayResults = (results, action) => {
     } else {
         output += '<ul class="list-group">';
         filteredResults.forEach((result) => {
-            output += `<li class="list-group-item">
-                <strong>Filename:</strong> ${result.filename || "N/A"}<br>
-                <strong>Categories:</strong> ${result.categories.join(', ') || "N/A"}<br>
-                <strong>Specific Role:</strong> ${result.specific_role || "N/A"}<br>`;
+            output += `<li class="list-group-item" style="margin-bottom: 15px; padding: 15px;">
+                <div style="display: grid; grid-template-columns: 180px 1fr; gap: 10px;">
+                    <strong>Filename:</strong> <span>${result.filename || "N/A"}</span>
+                    <strong>Categories:</strong> <span>${result.categories?.join(', ') || "N/A"}</span>
+                    <strong>Specific Role:</strong> <span>${result.specific_role || "N/A"}</span>`;
 
             if (action === 'summarize') {
                 output += `
-                    <strong>Name:</strong> ${result.name || "N/A"}<br>
-                    <strong>Email:</strong> ${result.email || "N/A"}<br>
-                    <strong>Phone:</strong> ${result.phone || "N/A"}<br>
-                    <strong>Qualification:</strong> ${result.qualification || "N/A"}<br>
-                    <strong>Experience:</strong> ${result.experience || "N/A"}<br>
-                    <strong>Skills:</strong> ${result.skills || "N/A"}<br>
-                    <strong>Evaluation:</strong> ${result.evaluation || "N/A"}<br>
-                    <strong>Personality:</strong> ${result.personal_evaluation || "N/A"}<br>`;
+                    <strong>Name:</strong> <span>${result.name || "N/A"}</span>
+                    <strong>Email:</strong> <span>${result.email || "N/A"}</span>
+                    <strong>Phone:</strong> <span>${result.phone || "N/A"}</span>
+                    <strong>Qualification:</strong> <span>${result.qualification || "N/A"}</span>
+                    <strong>Experience:</strong> <div>${formatExperience(result.experience)}</div>
+                    <strong>Skills:</strong> <span>${result.skills || "N/A"}</span>
+                    <strong>Evaluation:</strong> <span>${result.evaluation || "N/A"}</span>
+                    <strong>Personality:</strong> <span>${result.personal_evaluation || "N/A"}</span>`;
             } else if (action === 'match') {
                 output += `
-                    <strong>Percentage Match:</strong> ${result.percentage_match || "N/A"}<br>
-                    <strong>Justification:</strong> ${result.justification || "N/A"}<br>
-                    <strong>Lacking:</strong> ${result.lacking || "N/A"}<br>`;
+                    <strong>Percentage Match:</strong> <span>${result.percentage_match || "N/A"}</span>
+                    <strong>Justification:</strong> <span>${result.justification || "N/A"}</span>
+                    <strong>Lacking:</strong> <div>${formatLacking(result.lacking)}</div>`;
             }
 
-            output += `</li>`;
+            output += `</div></li>`;
         });
         output += '</ul>';
     }
@@ -203,8 +261,8 @@ document.getElementById('generateJD').onclick = async () => {
 
     try {
         document.getElementById('jobDescription').placeholder = "Generating JD...";
-        const response = await axios.post('/generate_jd', 
-            { job_role: jobRole }, 
+        const response = await axios.post('/generate_jd',
+            { job_role: jobRole },
             { headers: { 'Content-Type': 'application/json' } }
         );
 
@@ -352,4 +410,89 @@ shortlistButton.onclick = async () => {
     } catch (err) {
         alert('Error shortlisting resumes: ' + (err.response?.data?.error || 'Please try again.'));
     }
+};
+dropzone.addEventListener('click', () => fileInput.click());
+
+// Handle file selection
+fileInput.addEventListener('change', () => {
+    updateFileDisplay();
+});
+
+// Drag and drop events
+dropzone.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    dropzone.style.borderColor = '#0d6efd';
+    dropzone.style.backgroundColor = '#f0f7ff';
+});
+
+dropzone.addEventListener('dragleave', () => {
+    dropzone.style.borderColor = '#ccc';
+    dropzone.style.backgroundColor = '';
+});
+
+dropzone.addEventListener('drop', (e) => {
+    e.preventDefault();
+    dropzone.style.borderColor = '#ccc';
+    dropzone.style.backgroundColor = '';
+    
+    if (e.dataTransfer.files.length) {
+        // Combine existing files with new ones
+        const existingFiles = Array.from(fileInput.files);
+        const newFiles = Array.from(e.dataTransfer.files);
+        const combinedFiles = [...existingFiles, ...newFiles];
+        
+        // Create new DataTransfer and add all files
+        const dt = new DataTransfer();
+        combinedFiles.forEach(file => dt.items.add(file));
+        
+        fileInput.files = dt.files;
+        updateFileDisplay();
+    }
+});
+
+// Update the file display
+function updateFileDisplay() {
+    const files = fileInput.files;
+    fileList.innerHTML = '';
+    
+    if (!files.length) {
+        fileCount.textContent = 'No files selected';
+        dropzoneText.textContent = 'Drag & drop PDF files here or click to browse';
+        return;
+    }
+    
+    // Update file count
+    fileCount.textContent = `${files.length} file(s) selected`;
+    
+    // Create file list
+    const list = document.createElement('ul');
+    list.className = 'list-group';
+    
+    Array.from(files).forEach((file, index) => {
+        const item = document.createElement('li');
+        item.className = 'list-group-item d-flex justify-content-between align-items-center';
+        item.innerHTML = `
+            <span>${file.name}</span>
+            <span class="badge bg-secondary rounded-pill">${(file.size/1024).toFixed(1)}KB</span>
+            <button class="btn btn-sm btn-outline-danger" onclick="removeFile(${index})">
+                <i class="fas fa-times"></i>
+            </button>
+        `;
+        list.appendChild(item);
+    });
+    
+    fileList.appendChild(list);
+}
+
+// Remove file function
+window.removeFile = function(index) {
+    const dt = new DataTransfer();
+    const files = fileInput.files;
+    
+    for (let i = 0; i < files.length; i++) {
+        if (i !== index) dt.items.add(files[i]);
+    }
+    
+    fileInput.files = dt.files;
+    updateFileDisplay();
 };
