@@ -13,8 +13,8 @@ const fileInput = document.getElementById('resumes');
 const fileList = document.getElementById('file-list');
 const dropzoneText = document.getElementById('dropzone-text');
 const fileCount = document.getElementById('file-count');
+const visualizationDiv = document.getElementById('visualization');
 
-// Supported file extensions
 const SUPPORTED_EXTENSIONS = ['.pdf', '.docx', '.txt', '.png', '.jpg', '.jpeg'];
 
 let summarizedData = [];
@@ -23,6 +23,7 @@ let categorizedResults = {};
 let currentAction = '';
 let countdownInterval;
 let currentCategory = '';
+let pieChart, barChart; // Chart instances
 
 summarizeButton.onclick = () => submitForm('summarize');
 matchButton.onclick = () => {
@@ -44,6 +45,7 @@ const submitForm = async (action) => {
     downloadFilteredCsvButton.style.display = 'none';
     shortlistButton.style.display = 'none';
     categoryFilters.style.display = 'none';
+    visualizationDiv.style.display = 'none';
     resultsDiv.innerHTML = '';
 
     const numberOfResumes = formData.getAll('resumes').length;
@@ -76,6 +78,7 @@ const submitForm = async (action) => {
 
         setupCategoryFilters();
         setupPercentageFilter();
+        displayCharts(); // Render charts after processing
     } catch (err) {
         const errorMessage = err.response?.data?.error || 'Error processing resumes. Please try again.';
         alert(errorMessage);
@@ -100,7 +103,6 @@ const startCountdown = (timeInSeconds) => {
     }, 1000);
 };
 
-// Function to format experience text
 const formatExperience = (experienceText) => {
     if (!experienceText || experienceText === "N/A") return "N/A";
 
@@ -125,7 +127,6 @@ const formatExperience = (experienceText) => {
     return formattedExperiences.join("<br>");
 };
 
-// Function to format lacking text
 const formatLacking = (lackingText) => {
     if (!lackingText || lackingText === "N/A") return "N/A";
 
@@ -224,6 +225,7 @@ const setupCategoryFilters = () => {
             } else {
                 displayResults(currentAction === 'summarize' ? summarizedData : matchData, currentAction);
             }
+            displayCharts(); // Update charts when category changes
         };
     });
 };
@@ -236,6 +238,7 @@ const setupPercentageFilter = () => {
         } else {
             displayResults(currentAction === 'summarize' ? summarizedData : matchData, currentAction);
         }
+        displayCharts(); // Update charts when percentage filter changes
     };
 };
 
@@ -398,7 +401,6 @@ shortlistButton.onclick = async () => {
     }
 };
 
-// Set accept attribute on file input
 fileInput.setAttribute('accept', SUPPORTED_EXTENSIONS.join(','));
 
 dropzone.addEventListener('click', () => fileInput.click());
@@ -459,7 +461,7 @@ function updateFileDisplay() {
     if (validFiles.length === 0) {
         fileCount.textContent = 'No valid files selected';
         dropzoneText.textContent = 'Drag & drop files here or click to browse (PDF, DOCX, TXT, PNG, JPG, JPEG)';
-        fileInput.files = new DataTransfer().files; // Clear all files
+        fileInput.files = new DataTransfer().files;
         return;
     }
 
@@ -499,3 +501,87 @@ window.removeFile = function(index) {
     fileInput.files = dt.files;
     updateFileDisplay();
 };
+
+// Visualization function
+function displayCharts() {
+    const percentageThreshold = parseFloat(percentageThresholdSelect.value) || 0;
+    let dataToVisualize = categorizedResults;
+
+    // Filter by current category if selected
+    if (currentCategory) {
+        dataToVisualize = { [currentCategory]: categorizedResults[currentCategory] };
+    }
+
+    // Apply percentage threshold for match action
+    if (currentAction === 'match') {
+        dataToVisualize = Object.fromEntries(
+            Object.entries(dataToVisualize).map(([category, resumes]) => [
+                category,
+                resumes.filter(resume => {
+                    const percentage = parseFloat(resume.percentage_match.replace('%', '')) || 0;
+                    return percentage >= percentageThreshold;
+                })
+            ])
+        );
+    }
+
+    const categories = Object.keys(dataToVisualize);
+    const counts = categories.map(category => dataToVisualize[category].length);
+    const total = counts.reduce((sum, count) => sum + count, 0);
+    const percentages = counts.map(count => total > 0 ? ((count / total) * 100).toFixed(1) : 0);
+
+    // Destroy existing charts if they exist
+    if (pieChart) pieChart.destroy();
+    if (barChart) barChart.destroy();
+
+    // Pie Chart (Percentage Distribution)
+    const pieCtx = document.getElementById('pieChart').getContext('2d');
+    pieChart = new Chart(pieCtx, {
+        type: 'pie',
+        data: {
+            labels: categories,
+            datasets: [{
+                data: percentages,
+                backgroundColor: [
+                    '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF',
+                    '#FF9F40', '#C9CBCF', '#7BC043', '#F4A261', '#E76F51'
+                ],
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: { position: 'top' },
+                title: { display: true, text: 'Percentage Distribution by Category' },
+                tooltip: { callbacks: { label: context => `${context.label}: ${context.raw}%` } }
+            }
+        }
+    });
+
+    // Bar Chart (Count Distribution)
+    const barCtx = document.getElementById('barChart').getContext('2d');
+    barChart = new Chart(barCtx, {
+        type: 'bar',
+        data: {
+            labels: categories,
+            datasets: [{
+                label: 'Number of Resumes',
+                data: counts,
+                backgroundColor: '#36A2EB',
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: { display: false },
+                title: { display: true, text: 'Count of Resumes by Category' }
+            },
+            scales: {
+                y: { beginAtZero: true, title: { display: true, text: 'Count' } },
+                x: { title: { display: true, text: 'Category' } }
+            }
+        }
+    });
+
+    visualizationDiv.style.display = total > 0 ? 'block' : 'none';
+}
