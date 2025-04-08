@@ -450,7 +450,6 @@ dropzone.addEventListener('drop', (e) => {
     }
 });
 
-// Update the file display
 function updateFileDisplay() {
     const files = fileInput.files;
     fileList.innerHTML = '';
@@ -461,10 +460,8 @@ function updateFileDisplay() {
         return;
     }
     
-    // Update file count
     fileCount.textContent = `${files.length} file(s) selected`;
     
-    // Create file list
     const list = document.createElement('ul');
     list.className = 'list-group';
     
