@@ -14,14 +14,15 @@ const fileList = document.getElementById('file-list');
 const dropzoneText = document.getElementById('dropzone-text');
 const fileCount = document.getElementById('file-count');
 
+// Supported file extensions
+const SUPPORTED_EXTENSIONS = ['.pdf', '.docx', '.txt', '.png', '.jpg', '.jpeg'];
+
 let summarizedData = [];
 let matchData = [];
 let categorizedResults = {};
 let currentAction = '';
 let countdownInterval;
-let currentCategory = ''; // Track the currently selected category
-
-
+let currentCategory = '';
 
 summarizeButton.onclick = () => submitForm('summarize');
 matchButton.onclick = () => {
@@ -76,7 +77,8 @@ const submitForm = async (action) => {
         setupCategoryFilters();
         setupPercentageFilter();
     } catch (err) {
-        alert('Error processing resumes. Please try again.');
+        const errorMessage = err.response?.data?.error || 'Error processing resumes. Please try again.';
+        alert(errorMessage);
     } finally {
         loader.style.display = 'none';
         clearInterval(countdownInterval);
@@ -102,30 +104,24 @@ const startCountdown = (timeInSeconds) => {
 const formatExperience = (experienceText) => {
     if (!experienceText || experienceText === "N/A") return "N/A";
 
-    // Split on newlines (\n), "(n -", or " - " (for cases like the second candidate)
     let experiences = experienceText.includes("(n -")
         ? experienceText.split("(n -")
         : experienceText.includes(" - ")
             ? experienceText.split(" - ").filter(e => e.trim() !== "")
             : experienceText.split("\n").filter(e => e.trim() !== "");
 
-    // Clean and format each experience
     const formattedExperiences = experiences.map(exp => {
-        // Remove unwanted symbols
         let cleanExp = exp.replace(/[\*\[\]":]+/g, "").trim();
-
-        // Split into components (assuming format: "Company, Role, Duration")
         const parts = cleanExp.split(", ").map(part => part.trim());
         if (parts.length >= 3) {
             const company = parts[0];
             const role = parts[1];
-            const duration = parts.slice(2).join(", "); // Join remaining parts as duration
+            const duration = parts.slice(2).join(", ");
             return `${company} - ${role}, ${duration}`;
         }
-        return cleanExp; // Fallback if parsing fails
+        return cleanExp;
     });
 
-    // Join with <br> for new lines
     return formattedExperiences.join("<br>");
 };
 
@@ -133,18 +129,14 @@ const formatExperience = (experienceText) => {
 const formatLacking = (lackingText) => {
     if (!lackingText || lackingText === "N/A") return "N/A";
 
-    // Split on newlines (\n) or use numbering pattern (e.g., "2.")
     let items = lackingText.includes("\n")
         ? lackingText.split("\n")
         : lackingText.split(/(?=\d+\.\s)/).filter(item => item.trim() !== "");
 
-    // Clean and format each item
     const formattedItems = items.map(item => {
-        // Remove unwanted symbols
         return item.replace(/[\*\[\]":]+/g, "").trim();
     });
 
-    // Join with <br> for new lines
     return formattedItems.join("<br>");
 };
 
@@ -153,7 +145,6 @@ const displayResults = (results, action) => {
     const selectedCategories = Array.from(document.querySelectorAll('.category-checkbox:checked'))
         .map(checkbox => checkbox.value);
 
-    // Filter results by percentage match (only for match action)
     let filteredResults = results;
     if (action === 'match') {
         filteredResults = results.filter(result => {
@@ -162,7 +153,6 @@ const displayResults = (results, action) => {
         });
     }
 
-    // Sort by percentage match if action is 'match'
     if (action === 'match') {
         filteredResults.sort((a, b) => {
             let percentA = parseFloat(a.percentage_match.replace('%', '')) || 0;
@@ -172,8 +162,6 @@ const displayResults = (results, action) => {
     }
 
     let output = '<h2>Results</h2>';
-
-    // Display the applied filters
     output += '<p><strong>Applied Filters:</strong> ';
     if (percentageThreshold > 0 && selectedCategories.length > 0) {
         output += `Percentage Match >= ${percentageThreshold}%, Categories: ${selectedCategories.join(', ')}`;
@@ -242,7 +230,6 @@ const setupCategoryFilters = () => {
 
 const setupPercentageFilter = () => {
     percentageThresholdSelect.onchange = () => {
-        // Refresh the displayed results based on the current category and new percentage threshold
         if (currentCategory) {
             const filteredResults = categorizedResults[currentCategory] || [];
             displayResults(filteredResults, currentAction);
@@ -374,7 +361,6 @@ shortlistButton.onclick = async () => {
     const selectedCategories = Array.from(document.querySelectorAll('.category-checkbox:checked'))
         .map(checkbox => checkbox.value);
 
-    // Optional: Warn the user if no filters are applied
     if (percentageThreshold === 0 && selectedCategories.length === 0) {
         const confirm = window.confirm('No percentage threshold or categories selected. All matched resumes will be shortlisted. Proceed?');
         if (!confirm) return;
@@ -397,7 +383,7 @@ shortlistButton.onclick = async () => {
         const response = await axios.post('/shortlist_resumes', {
             summarized_data: dataToExport,
             percentage_threshold: percentageThreshold,
-            categories: selectedCategories  // Pass selected categories to the backend
+            categories: selectedCategories
         }, {
             headers: { 'Content-Type': 'application/json' }
         });
@@ -411,14 +397,16 @@ shortlistButton.onclick = async () => {
         alert('Error shortlisting resumes: ' + (err.response?.data?.error || 'Please try again.'));
     }
 };
+
+// Set accept attribute on file input
+fileInput.setAttribute('accept', SUPPORTED_EXTENSIONS.join(','));
+
 dropzone.addEventListener('click', () => fileInput.click());
 
-// Handle file selection
 fileInput.addEventListener('change', () => {
     updateFileDisplay();
 });
 
-// Drag and drop events
 dropzone.addEventListener('dragover', (e) => {
     e.preventDefault();
     dropzone.style.borderColor = '#0d6efd';
@@ -436,12 +424,10 @@ dropzone.addEventListener('drop', (e) => {
     dropzone.style.backgroundColor = '';
     
     if (e.dataTransfer.files.length) {
-        // Combine existing files with new ones
         const existingFiles = Array.from(fileInput.files);
         const newFiles = Array.from(e.dataTransfer.files);
         const combinedFiles = [...existingFiles, ...newFiles];
         
-        // Create new DataTransfer and add all files
         const dt = new DataTransfer();
         combinedFiles.forEach(file => dt.items.add(file));
         
@@ -456,16 +442,37 @@ function updateFileDisplay() {
     
     if (!files.length) {
         fileCount.textContent = 'No files selected';
-        dropzoneText.textContent = 'Drag & drop PDF files here or click to browse';
+        dropzoneText.textContent = 'Drag & drop files here or click to browse (PDF, DOCX, TXT, PNG, JPG, JPEG)';
         return;
     }
     
-    fileCount.textContent = `${files.length} file(s) selected`;
+    const validFiles = [];
+    Array.from(files).forEach(file => {
+        const ext = '.' + file.name.split('.').pop().toLowerCase();
+        if (SUPPORTED_EXTENSIONS.includes(ext)) {
+            validFiles.push(file);
+        } else {
+            alert(`File "${file.name}" is not supported. Supported types: ${SUPPORTED_EXTENSIONS.join(', ')}`);
+        }
+    });
+
+    if (validFiles.length === 0) {
+        fileCount.textContent = 'No valid files selected';
+        dropzoneText.textContent = 'Drag & drop files here or click to browse (PDF, DOCX, TXT, PNG, JPG, JPEG)';
+        fileInput.files = new DataTransfer().files; // Clear all files
+        return;
+    }
+
+    const dt = new DataTransfer();
+    validFiles.forEach(file => dt.items.add(file));
+    fileInput.files = dt.files;
+
+    fileCount.textContent = `${validFiles.length} file(s) selected`;
     
     const list = document.createElement('ul');
     list.className = 'list-group';
     
-    Array.from(files).forEach((file, index) => {
+    validFiles.forEach((file, index) => {
         const item = document.createElement('li');
         item.className = 'list-group-item d-flex justify-content-between align-items-center';
         item.innerHTML = `
@@ -481,7 +488,6 @@ function updateFileDisplay() {
     fileList.appendChild(list);
 }
 
-// Remove file function
 window.removeFile = function(index) {
     const dt = new DataTransfer();
     const files = fileInput.files;

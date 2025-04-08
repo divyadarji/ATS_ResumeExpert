@@ -20,6 +20,7 @@ from datetime import datetime
 import logging
 import shutil
 import tempfile
+from docx import Document  # New dependency for DOCX support
 
 # Set up logging
 logging.basicConfig(level=logging.DEBUG)
@@ -38,7 +39,7 @@ Session(app)
 
 # In-memory cache for resume data and uploaded file paths
 resume_cache = {}
-uploaded_files = {}  # To store paths to temporary files
+uploaded_files = {}
 
 # Directory for shortlisted resumes
 SHORTLIST_DIR = "shortlisted_resumes"
@@ -50,6 +51,9 @@ TEMP_UPLOAD_DIR = "temp_uploads"
 if not os.path.exists(TEMP_UPLOAD_DIR):
     os.makedirs(TEMP_UPLOAD_DIR)
 
+# Supported file extensions
+SUPPORTED_EXTENSIONS = {'.pdf', '.docx', '.txt', '.png', '.jpg', '.jpeg'}
+
 def extract_text_from_pdf(uploaded_file):
     pdf_reader = PdfReader(uploaded_file)
     text = ""
@@ -57,8 +61,31 @@ def extract_text_from_pdf(uploaded_file):
         text += page.extract_text() or ""
     return text.strip()
 
-def extract_text_with_ocr(uploaded_file, lang='eng'):
-    return pytesseract.image_to_string(Image.open(uploaded_file), lang=lang)
+def extract_text_with_ocr(file_path, lang='eng'):
+    return pytesseract.image_to_string(Image.open(file_path), lang=lang)
+
+def extract_text_from_file(file_path):
+    filename = os.path.basename(file_path).lower()
+    ext = os.path.splitext(filename)[1]
+    
+    if ext not in SUPPORTED_EXTENSIONS:
+        raise ValueError(f"Unsupported file type: {ext}. Supported types are: {', '.join(SUPPORTED_EXTENSIONS)}")
+    
+    try:
+        if ext == '.pdf':
+            with open(file_path, 'rb') as f:
+                return extract_text_from_pdf(f)
+        elif ext == '.docx':
+            doc = Document(file_path)
+            return "\n".join([para.text for para in doc.paragraphs if para.text.strip()])
+        elif ext == '.txt':
+            with open(file_path, 'r', encoding='utf-8') as f:
+                return f.read()
+        elif ext in ('.png', '.jpg', '.jpeg'):
+            return extract_text_with_ocr(file_path, lang='hin+guj+eng')
+    except Exception as e:
+        logger.error(f"Error extracting text from {filename}: {e}")
+        return ""
 
 def detect_language(text):
     return detect(text)
@@ -291,6 +318,12 @@ def process_resumes():
     if action == "match" and not job_description:
         return jsonify({"alert": "Job description is required to process matching action."}), 200
 
+    # Validate file extensions
+    for resume in resumes:
+        ext = os.path.splitext(resume.filename.lower())[1]
+        if ext not in SUPPORTED_EXTENSIONS:
+            return jsonify({"error": f"Unsupported file type: {resume.filename}. Supported types are: {', '.join(SUPPORTED_EXTENSIONS)}"}), 400
+
     prompts = {
         "summarize": """
         always extract text with labels like below.
@@ -353,11 +386,9 @@ def process_resumes():
             if cached_summary and "specific_role" in cached_summary:
                 result = cached_summary.copy()
             else:
-                with open(temp_file_path, 'rb') as f:
-                    resume_text = extract_text_from_pdf(f)
-                if not resume_text.strip():
-                    with open(temp_file_path, 'rb') as f:
-                        resume_text = extract_text_with_ocr(f, lang='hin+guj+eng')
+                resume_text = extract_text_from_file(temp_file_path)
+                if not resume_text.strip() and os.path.splitext(resume.filename.lower())[1] in ('.png', '.jpg', '.jpeg'):
+                    resume_text = extract_text_with_ocr(temp_file_path, lang='hin+guj+eng')
                 language = detect_language(resume_text)
                 if language != 'en':
                     resume_text = translate_to_english(resume_text, source_lang=language)
@@ -383,11 +414,9 @@ def process_resumes():
                 if cached_match and "percentage_match" in cached_match and cached_match["percentage_match"] != "":
                     result.update(cached_match)
                 else:
-                    with open(temp_file_path, 'rb') as f:
-                        resume_text = extract_text_from_pdf(f)
-                    if not resume_text.strip():
-                        with open(temp_file_path, 'rb') as f:
-                            resume_text = extract_text_with_ocr(f, lang='hin+guj+eng')
+                    resume_text = extract_text_from_file(temp_file_path)
+                    if not resume_text.strip() and os.path.splitext(resume.filename.lower())[1] in ('.png', '.jpg', '.jpeg'):
+                        resume_text = extract_text_with_ocr(temp_file_path, lang='hin+guj+eng')
                     language = detect_language(resume_text)
                     if language != 'en':
                         resume_text = translate_to_english(resume_text, source_lang=language)
@@ -475,7 +504,6 @@ def get_cached_results():
     if session_id not in resume_cache or not resume_cache[session_id]["summaries"]:
         return jsonify({"error": "No cached results available. Please process resumes first."}), 404
     
-    # Get percentage threshold from query parameters (default to 0, i.e., no filter)
     percentage_threshold = float(request.args.get('percentage_threshold', 0))
 
     results = []
@@ -491,7 +519,6 @@ def get_cached_results():
                 result.update(match_data)
                 break
         
-        # Apply percentage match filter
         percentage_str = result.get("percentage_match", "0%")
         try:
             percentage = float(percentage_str.replace('%', ''))
@@ -525,7 +552,6 @@ def download_csv():
             logger.error("summarized_data is not a list: %s", type(data))
             return jsonify({"error": "summarized_data must be a list."}), 400
 
-        # Filter by percentage match
         filtered_data = []
         for item in data:
             percentage_str = item.get("percentage_match", "0%")
@@ -604,10 +630,7 @@ def download_filtered_csv():
             logger.error("categories is not a list: %s", type(categories))
             return jsonify({"error": "categories must be a list."}), 400
 
-        # Filter by categories
         filtered_data = [item for item in data if any(cat in item.get("categories", []) for cat in categories)]
-        
-        # Further filter by percentage match
         final_filtered_data = []
         for item in filtered_data:
             percentage_str = item.get("percentage_match", "0%")
@@ -667,8 +690,8 @@ def shortlist_resumes():
             return jsonify({"error": "Request must contain JSON data"}), 400
 
         data = request.json.get("summarized_data")
-        percentage_threshold = float(request.json.get("percentage_threshold", 0))  # Default to 0 (no filter)
-        categories = request.json.get("categories", [])  # Categories are optional
+        percentage_threshold = float(request.json.get("percentage_threshold", 0))
+        categories = request.json.get("categories", [])
         session_id = session.get('session_id')
 
         if data is None:
@@ -683,21 +706,17 @@ def shortlist_resumes():
             logger.error("No uploaded files found for session: %s", session_id)
             return jsonify({"error": "No uploaded files found. Please process resumes first."}), 404
 
-        # Filter resumes based on the provided conditions
         shortlisted_data = []
         for item in data:
-            # Extract percentage match
             percentage_str = item.get("percentage_match", "0%")
             try:
                 percentage = float(percentage_str.replace('%', ''))
             except ValueError:
                 percentage = 0.0
 
-            # Check if the resume matches the criteria
             matches_percentage = percentage >= percentage_threshold
             matches_categories = not categories or any(cat in item.get("categories", []) for cat in categories)
 
-            # Include the resume if it matches the required conditions
             if matches_percentage and matches_categories:
                 shortlisted_data.append(item)
 
@@ -705,7 +724,6 @@ def shortlist_resumes():
             logger.warning("No resumes found with percentage match >= %s and categories: %s", percentage_threshold, categories)
             return jsonify({"error": f"No resumes found with percentage match >= {percentage_threshold}% and categories {categories}."}), 404
 
-        # Create a subfolder for this shortlist operation with category names
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         category_suffix = "_".join(categories) if categories else "all_categories"
         shortlist_folder = os.path.join(SHORTLIST_DIR, f"shortlist_{category_suffix}_{timestamp}")
@@ -716,7 +734,6 @@ def shortlist_resumes():
             logger.error(f"Failed to create shortlist folder {shortlist_folder}: {e}")
             return jsonify({"error": f"Failed to create shortlist folder: {e}"}), 500
 
-        # Copy shortlisted resumes to the folder
         shortlisted_count = 0
         for item in shortlisted_data:
             filename = item.get("filename")
@@ -729,7 +746,7 @@ def shortlist_resumes():
                     shortlisted_count += 1
                 except Exception as e:
                     logger.error(f"Failed to copy {temp_file_path} to {destination_path}: {e}")
-                    continue  # Continue with the next file instead of failing
+                    continue
 
         if shortlisted_count == 0:
             logger.warning("No files were successfully shortlisted")
