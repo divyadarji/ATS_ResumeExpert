@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -9,200 +8,194 @@
     <link href="/static/style.css" rel="stylesheet">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link
-        href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&family=Poppins:wght@300;400;500;600;700&display=swap"
-        rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
-
 <body>
-    <div class="container">
-        <header class="text-center mb-5">
-            <h1><i class="fas fa-file-alt me-2"></i>Resume Expert</h1>
-            <p class="lead text-secondary">AI-powered resume analysis and matching tool</p>
-        </header>
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-dark sticky-top">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="#">
+                <i class="fas fa-file-alt me-2"></i>Resume Expert
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
+                aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item"><a class="nav-link active" href="#home">Home</a></li>
+                    <li class="nav-item"><a class="nav-link" href="#features">Features</a></li>
+                    <li class="nav-item"><a class="nav-link" href="#contact">Contact</a></li>
+                </ul>
+            </div>
+        </div>
+    </nav>
 
-        <div class="card mb-4">
-            <div class="card-body">
-                <form id="resumeForm" enctype="multipart/form-data">
-                    <div class="row mb-4">
-                        <div class="col-md-8">
-                            <label for="jobRole" class="form-label">Enter Job Role</label>
-                            <div class="input-group">
-                                <input type="text" class="form-control" id="jobRole"
-                                    placeholder="e.g., Data Scientist, Full Stack Developer">
-                                <button type="button" class="btn btn-info" id="generateJD">
-                                    <i class="fas fa-magic me-2"></i>Generate JD
-                                </button>
+    <!-- Hero Section -->
+    <section id="home" class="hero-section text-center text-light py-5">
+        <div class="container-fluid">
+            <h1 class="display-4 fw-bold mb-4">Resume Expert</h1>
+            <p class="lead mb-4">Your AI-powered solution for resume analysis, matching, and insights.</p>
+            <a href="#upload-section" class="btn btn-light btn-lg">Start Analyzing</a>
+        </div>
+    </section>
+
+    <!-- Main Content -->
+    <main class="py-5">
+        <div class="container-fluid">
+            <div class="row g-3 align-items-stretch">
+                <!-- Upload Section -->
+                <div class="col-lg-5">
+                    <section id="upload-section" class="card shadow-sm h-100">
+                        <div class="card-body">
+                            <h2 class="mb-4"><i class="fas fa-upload me-2"></i>Analyze Resumes</h2>
+                            <form id="resumeForm" enctype="multipart/form-data">
+                                <div class="mb-4">
+                                    <label for="jobRole" class="form-label">Job Role</label>
+                                    <div class="input-group">
+                                        <input type="text" class="form-control" id="jobRole" placeholder="e.g., Data Scientist">
+                                        <button type="button" class="btn btn-info" id="generateJD">
+                                            <i class="fas fa-magic me-2"></i>Generate JD
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div class="mb-4">
+                                    <label for="jobDescription" class="form-label">Job Description</label>
+                                    <textarea class="form-control" id="jobDescription" name="job_description" rows="5"
+                                        placeholder="Enter or generate a job description..."></textarea>
+                                </div>
+
+                                <div class="mb-4">
+                                    <label class="form-label">Upload Resumes</label>
+                                    <div id="dropzone" class="dropzone">
+                                        <p id="dropzone-text">Drag & drop files (PDF, DOCX, TXT, PNG, JPG, JPEG)</p>
+                                        <input type="file" id="resumes" name="resumes" accept=".pdf,.docx,.txt,.png,.jpg,.jpeg" multiple style="display: none;">
+                                    </div>
+                                    <small id="file-count" class="text-muted d-block mt-2">No files selected</small>
+                                    <div id="file-list" class="mt-3"></div>
+                                </div>
+
+                                <div class="text-center mt-4">
+                                    <button type="button" class="btn btn-primary me-3" id="summarizeButton">
+                                        <i class="fas fa-list-alt me-2"></i>Summarize
+                                    </button>
+                                    <button type="button" class="btn btn-secondary" id="matchButton">
+                                        <i class="fas fa-percentage me-2"></i>Match
+                                    </button>
+                                </div>
+
+                                <div class="mt-5 p-3 bg-white rounded shadow-sm">
+                                    <h4 class="mb-3"><i class="fas fa-download me-2"></i>Categories to Download</h4>
+                                    <div id="categoryCheckboxes" class="form-check p-2 bg-light rounded">
+                                        <div class="row row-cols-2 row-cols-md-3 g-2">
+                                            <div class="col"><div class="form-check"><input type="checkbox" class="form-check-input category-checkbox" id="checkFrontend" value="Frontend"><label class="form-check-label" for="checkFrontend">Frontend</label></div></div>
+                                            <div class="col"><div class="form-check"><input type="checkbox" class="form-check-input category-checkbox" id="checkBackend" value="Backend"><label class="form-check-label" for="checkBackend">Backend</label></div></div>
+                                            <div class="col"><div class="form-check"><input type="checkbox" class="form-check-input category-checkbox" id="checkFullStack" value="Full Stack"><label class="form-check-label" for="checkFullStack">Full Stack</label></div></div>
+                                            <div class="col"><div class="form-check"><input type="checkbox" class="form-check-input category-checkbox" id="checkMobile" value="Mobile"><label class="form-check-label" for="checkMobile">Mobile</label></div></div>
+                                            <div class="col"><div class="form-check"><input type="checkbox" class="form-check-input category-checkbox" id="checkAIML" value="AIML"><label class="form-check-label" for="checkAIML">AI/ML</label></div></div>
+                                            <div class="col"><div class="form-check"><input type="checkbox" class="form-check-input category-checkbox" id="checkTesting" value="Testing"><label class="form-check-label" for="checkTesting">Testing</label></div></div>
+                                            <div class="col"><div class="form-check"><input type="checkbox" class="form-check-input category-checkbox" id="checkCloud" value="Cloud Engineer"><label class="form-check-label" for="checkCloud">Cloud</label></div></div>
+                                            <div class="col"><div class="form-check"><input type="checkbox" class="form-check-input category-checkbox" id="checkDevOps" value="DevOps"><label class="form-check-label" for="checkDevOps">DevOps</label></div></div>
+                                            <div class="col"><div class="form-check"><input type="checkbox" class="form-check-input category-checkbox" id="checkHR" value="HR"><label class="form-check-label" for="checkHR">HR</label></div></div>
+                                            <div class="col"><div class="form-check"><input type="checkbox" class="form-check-input category-checkbox" id="checkUncategorized" value="Uncategorized"><label class="form-check-label" for="checkUncategorized">Uncategorized</label></div></div>
+                                        </div>
+                                    </div>
+                                    <div class="col-12 text-center mt-3">
+                                        <button type="button" class="btn btn-success me-2" id="downloadCsvButton" style="display: none;">
+                                            <i class="fas fa-file-csv me-2"></i>All CSV
+                                        </button>
+                                        <button type="button" class="btn btn-success me-2" id="downloadFilteredCsvButton" style="display: none;">
+                                            <i class="fas fa-filter me-2"></i>Filtered CSV
+                                        </button>
+                                        <button type="button" class="btn btn-warning" id="shortlistButton" style="display: none;">
+                                            <i class="fas fa-star me-2"></i>Shortlist
+                                        </button>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    </section>
+                </div>
+
+                <!-- Results & Insights Section -->
+                <div class="col-lg-7">
+                    <section id="results-section" class="card shadow-sm h-100">
+                        <div class="card-body">
+                            <h2 class="mb-4"><i class="fas fa-chart-line me-2"></i>Results & Insights</h2>
+
+                            <!-- Category Filters -->
+                            <div id="categoryFilters" class="mt-4">
+                                <h3 class="mb-3"><i class="fas fa-filter me-2"></i>Filter Results</h3>
+                                <div class="row g-2">
+                                    <div class="col-12">
+                                        <h4 class="mb-2">By Category</h4>
+                                        <div class="btn-group d-flex flex-wrap gap-2" role="group">
+                                            <button type="button" class="btn category-btn active" data-category="">All</button>
+                                            <button type="button" class="btn category-btn" data-category="Frontend">Frontend</button>
+                                            <button type="button" class="btn category-btn" data-category="Backend">Backend</button>
+                                            <button type="button" class="btn category-btn" data-category="Full Stack">Full Stack</button>
+                                            <button type="button" class="btn category-btn" data-category="Mobile">Mobile</button>
+                                            <button type="button" class="btn category-btn" data-category="AIML">AI/ML</button>
+                                            <button type="button" class="btn category-btn" data-category="Testing">Testing</button>
+                                            <button type="button" class="btn category-btn" data-category="Cloud Engineer">Cloud</button>
+                                            <button type="button" class="btn category-btn" data-category="DevOps">DevOps</button>
+                                            <button type="button" class="btn category-btn" data-category="HR">HR</button>
+                                            <button type="button" class="btn category-btn" data-category="Uncategorized">Uncategorized</button>
+                                        </div>
+                                    </div>
+
+                                    <div class="col-md-6">
+                                        <h4 class="mb-2"><i class="fas fa-percentage me-2"></i>By Match Percentage</h4>
+                                        <select id="percentageThreshold" class="form-select">
+                                            <option value="0">All Results</option>
+                                            <option value="70">>= 70%</option>
+                                            <option value="80">>= 80%</option>
+                                            <option value="90">>= 90%</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div id="loader" style="display: none;">
+                                <div class="spinner-border text-primary" role="status">
+                                    <span class="visually-hidden">Loading...</span>
+                                </div>
+                                <p id="timeRemaining" class="mt-2">Processing... Please wait.</p>
+                            </div>
+                            <div id="results" class="results mb-4"></div>
+
+                            <!-- Visualization -->
+                            <div id="visualization" class="mt-4">
+                                <h3 class="mb-3"><i class="fas fa-chart-pie me-2"></i>Category Distribution</h3>
+                                <div class="row">
+                                    <div class="col-md-6"><canvas id="pieChart"></canvas></div>
+                                    <div class="col-md-6"><canvas id="barChart"></canvas></div>
+                                </div>
                             </div>
                         </div>
-                    </div>
-
-                    <div class="mb-4">
-                        <label for="jobDescription" class="form-label">Job Description</label>
-                        <textarea class="form-control" id="jobDescription" name="job_description" rows="6"
-                            placeholder="Enter the job description here or generate one with AI..."></textarea>
-                    </div>
-
-                    <div class="mb-4">
-                        <label class="form-label"><i class="fas fa-upload me-2"></i>Upload Resumes (PDF, DOCX, TXT, PNG, JPG, JPEG)</label>
-                        <div id="dropzone" style="border: 2px dashed #ccc; padding: 20px; text-align: center; border-radius: 5px; cursor: pointer;">
-                            <p id="dropzone-text">Drag & drop files here or click to browse (PDF, DOCX, TXT, PNG, JPG, JPEG)</p>
-                            <input type="file" id="resumes" name="resumes" accept=".pdf,.docx,.txt,.png,.jpg,.jpeg" multiple style="display: none;">
-                        </div>
-                        <div class="mt-2">
-                            <small id="file-count" class="text-muted">No files selected</small>
-                        </div>
-                        <div id="file-list" class="mt-2" style="max-height: 200px; overflow-y: auto;"></div>
-                    </div>
-
-                    <div class="text-center">
-                        <button type="button" class="btn btn-primary me-2" id="summarizeButton">
-                            <i class="fas fa-list-alt me-2"></i>Summarize Resumes
-                        </button>
-                        <button type="button" class="btn btn-secondary me-2" id="matchButton">
-                            <i class="fas fa-percentage me-2"></i>Match with JD
-                        </button>
-                        <button type="button" class="btn btn-success me-2" id="downloadCsvButton"
-                            style="display: none;">
-                            <i class="fas fa-file-csv me-2"></i>Download All CSV
-                        </button>
-                        <button type="button" class="btn btn-success me-2" id="downloadFilteredCsvButton"
-                            style="display: none;">
-                            <i class="fas fa-filter me-2"></i>Download Selected CSV
-                        </button>
-                        <button type="button" class="btn btn-warning me-2" id="shortlistButton" style="display: none;">
-                            <i class="fas fa-star me-2"></i>Shortlist Resumes
-                        </button>
-                    </div>
-                </form>
-            </div>
-        </div>
-
-        <div id="loader" style="display: none;">
-            <div class="spinner-border" role="status">
-                <span class="visually-hidden">Loading...</span>
-            </div>
-            <p id="timeRemaining">Processing... Please wait.</p>
-        </div>
-
-        <!-- Category Filters -->
-        <div id="categoryFilters" class="mb-4" style="display: none;">
-            <h3><i class="fas fa-filter me-2"></i>Filter Results</h3>
-
-            <div class="mb-4">
-                <h4>Filter by Category</h4>
-                <div class="btn-group flex-wrap" role="group">
-                    <button type="button" class="btn category-btn active" data-category="">All</button>
-                    <button type="button" class="btn category-btn" data-category="Frontend">Frontend</button>
-                    <button type="button" class="btn category-btn" data-category="Backend">Backend</button>
-                    <button type="button" class="btn category-btn" data-category="Full Stack">Full Stack</button>
-                    <button type="button" class="btn category-btn" data-category="Mobile">Mobile</button>
-                    <button type="button" class="btn category-btn" data-category="AIML">AI/ML</button>
-                    <button type="button" class="btn category-btn" data-category="Testing">Testing</button>
-                    <button type="button" class="btn category-btn" data-category="Cloud Engineer">Cloud</button>
-                    <button type="button" class="btn category-btn" data-category="DevOps">DevOps</button>
-                    <button type="button" class="btn category-btn" data-category="HR">HR</button>
-                    <button type="button" class="btn category-btn" data-category="Uncategorized">Uncategorized</button>
+                    </section>
                 </div>
             </div>
+        </div>
+    </main>
 
-            <!-- Percentage Match Filter -->
-            <div class="mb-4">
-                <h4><i class="fas fa-percentage me-2"></i>Filter by Percentage Match</h4>
-                <select id="percentageThreshold" class="form-select w-auto d-inline-block">
-                    <option value="0">All Results</option>
-                    <option value="70">>= 70% Match</option>
-                    <option value="80">>= 80% Match</option>
-                    <option value="90">>= 90% Match</option>
-                </select>
-            </div>
-
+    <!-- Footer -->
+    <footer class="bg-dark text-light py-4 mt-5">
+        <div class="container-fluid text-center">
+            <p class="mb-2">© 2025 Resume Expert | AI-Powered Resume Analysis</p>
             <div>
-                <h4><i class="fas fa-download me-2"></i>Select Categories to Download</h4>
-                <div id="categoryCheckboxes" class="form-check">
-                    <div class="form-check-inline">
-                        <input type="checkbox" class="form-check-input category-checkbox" id="checkFrontend"
-                            value="Frontend">
-                        <label class="form-check-label" for="checkFrontend">Frontend</label>
-                    </div>
-                    <div class="form-check-inline">
-                        <input type="checkbox" class="form-check-input category-checkbox" id="checkBackend"
-                            value="Backend">
-                        <label class="form-check-label" for="checkBackend">Backend</label>
-                    </div>
-                    <div class="form-check-inline">
-                        <input type="checkbox" class="form-check-input category-checkbox" id="checkFullStack"
-                            value="Full Stack">
-                        <label class="form-check-label" for="checkFullStack">Full Stack</label>
-                    </div>
-                    <div class="form-check-inline">
-                        <input type="checkbox" class="form-check-input category-checkbox" id="checkMobile"
-                            value="Mobile">
-                        <label class="form-check-label" for="checkMobile">Mobile</label>
-                    </div>
-                    <div class="form-check-inline">
-                        <input type="checkbox" class="form-check-input category-checkbox" id="checkAIML" value="AIML">
-                        <label class="form-check-label" for="checkAIML">AI/ML</label>
-                    </div>
-                    <div class="form-check-inline">
-                        <input type="checkbox" class="form-check-input category-checkbox" id="checkTesting"
-                            value="Testing">
-                        <label class="form-check-label" for="checkTesting">Testing</label>
-                    </div>
-                    <div class="form-check-inline">
-                        <input type="checkbox" class="form-check-input category-checkbox" id="checkCloud"
-                            value="Cloud Engineer">
-                        <label class="form-check-label" for="checkCloud">Cloud</label>
-                    </div>
-                    <div class="form-check-inline">
-                        <input type="checkbox" class="form-check-input category-checkbox" id="checkDevOps"
-                            value="DevOps">
-                        <label class="form-check-label" for="checkDevOps">DevOps</label>
-                    </div>
-                    <div class="form-check-inline">
-                        <input type="checkbox" class="form-check-input category-checkbox" id="checkHR" value="HR">
-                        <label class="form-check-label" for="checkHR">HR</label>
-                    </div>
-                    <div class="form-check-inline">
-                        <input type="checkbox" class="form-check-input category-checkbox" id="checkUncategorized"
-                            value="Uncategorized">
-                        <label class="form-check-label" for="checkUncategorized">Uncategorized</label>
-                    </div>
-                </div>
+                <a href="#home" class="text-light me-3">Home</a>
+                <a href="#features" class="text-light me-3">Features</a>
+                <a href="#contact" class="text-light">Contact</a>
             </div>
         </div>
-
-        <div id="results" class="results card">
-            <!-- Results will be displayed here -->
-        </div>
-
-        <!-- Visualization Section -->
-        <div id="visualization" class="card mt-4" style="display: none;">
-            <div class="card-body">
-                <h3><i class="fas fa-chart-pie me-2"></i>Resume Category Distribution</h3>
-                <div class="row">
-                    <div class="col-md-6">
-                        <canvas id="pieChart"></canvas>
-                    </div>
-                    <div class="col-md-6">
-                        <canvas id="barChart"></canvas>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <footer class="text-center mt-5 mb-3 text-muted">
-            <p>© 2025 Resume Expert | AI-Powered Resume Analysis</p>
-        </footer>
-    </div>
+    </footer>
 
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
     <script src="{{ url_for('static', filename='script.js') }}"></script>
-    <script>(function () { function c() { var b = a.contentDocument || a.contentWindow.document; if (b) { var d = b.createElement('script'); d.innerHTML = "window.__CF$cv$params={r:'92c850d60bdc47e6',t:'MTc0NDAxNjIyOS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);"; b.getElementsByTagName('head')[0].appendChild(d) } } if (document.body) { var a = document.createElement('iframe'); a.height = 1; a.width = 1; a.style.position = 'absolute'; a.style.top = 0; a.style.left = 0; a.style.border = 'none'; a.style.visibility = 'hidden'; document.body.appendChild(a); if ('loading' !== document.readyState) c(); else if (window.addEventListener) document.addEventListener('DOMContentLoaded', c); else { var e = document.onreadystatechange || function () { }; document.onreadystatechange = function (b) { e(b); 'loading' !== document.readyState && (document.onreadystatechange = e, c()) } } } })();</script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'92cffa664a51b0b7',t:'MTc0NDA5NjU3NC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
 </body>
-
 </html>
