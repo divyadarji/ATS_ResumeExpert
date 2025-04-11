@@ -552,6 +552,7 @@ def download_csv():
             logger.error("summarized_data is not a list: %s", type(data))
             return jsonify({"error": "summarized_data must be a list."}), 400
 
+        percentage_threshold = float(request.json.get("percentage_threshold", 0))
         filtered_data = []
         for item in data:
             percentage_str = item.get("percentage_match", "0%")
@@ -631,6 +632,7 @@ def download_filtered_csv():
             return jsonify({"error": "categories must be a list."}), 400
 
         filtered_data = [item for item in data if any(cat in item.get("categories", []) for cat in categories)]
+        percentage_threshold = float(request.json.get("percentage_threshold", 0))
         final_filtered_data = []
         for item in filtered_data:
             percentage_str = item.get("percentage_match", "0%")
@@ -640,7 +642,6 @@ def download_filtered_csv():
                 percentage = 0.0
             if percentage >= percentage_threshold:
                 final_filtered_data.append(item)
-
         if not final_filtered_data:
             logger.warning("No data found for the selected categories and percentage threshold: %s, %s", categories, percentage_threshold)
             return jsonify({"error": f"No data found for the selected categories with percentage match >= {percentage_threshold}%."}), 404
@@ -758,6 +759,5 @@ def shortlist_resumes():
     except Exception as e:
         logger.error("Error in /shortlist_resumes: %s", str(e))
         return jsonify({"error": f"Error shortlisting resumes: {e}"}), 500
-
 if __name__ == "__main__":
     app.run(debug=True, host='0.0.0.0', port=5000)

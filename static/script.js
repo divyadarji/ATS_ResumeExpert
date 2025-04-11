@@ -269,7 +269,7 @@ document.getElementById('generateJD').onclick = async () => {
 };
 
 downloadCsvButton.onclick = async () => {
-    const percentageThreshold = parseFloat(percentageThresholdSelect.value) || 0;
+    const percentageThreshold = parseFloat(document.getElementById('downloadPercentageThreshold').value) || 0;
 
     const combinedData = [];
     summarizedData.forEach((summarized) => {
@@ -308,7 +308,7 @@ downloadCsvButton.onclick = async () => {
 };
 
 downloadFilteredCsvButton.onclick = async () => {
-    const percentageThreshold = parseFloat(percentageThresholdSelect.value) || 0;
+    const percentageThreshold = parseFloat(document.getElementById('downloadPercentageThreshold').value) || 0;
     const selectedCategories = Array.from(document.querySelectorAll('.category-checkbox:checked'))
         .map(checkbox => checkbox.value);
 
@@ -360,7 +360,7 @@ downloadFilteredCsvButton.onclick = async () => {
 };
 
 shortlistButton.onclick = async () => {
-    const percentageThreshold = parseFloat(percentageThresholdSelect.value) || 0;
+    const percentageThreshold = parseFloat(document.getElementById('downloadPercentageThreshold').value) || 0;
     const selectedCategories = Array.from(document.querySelectorAll('.category-checkbox:checked'))
         .map(checkbox => checkbox.value);
 
@@ -400,7 +400,6 @@ shortlistButton.onclick = async () => {
         alert('Error shortlisting resumes: ' + (err.response?.data?.error || 'Please try again.'));
     }
 };
-
 fileInput.setAttribute('accept', SUPPORTED_EXTENSIONS.join(','));
 
 dropzone.addEventListener('click', () => fileInput.click());

@@ -710,3 +710,18 @@ footer a:hover {
   .navbar-brand { font-size: 1.2rem; padding: 0.4rem 1rem; }
   footer p, footer a { font-size: 0.9rem; }
 }
+
+
+.form-select {
+  border-radius: 10px;
+  border: 1px solid #D1D5DB;
+  padding: 6px;
+  font-size: 0.85rem;
+  transition: all var(--transition-speed);
+  will-change: border-color, box-shadow;
+}
+
+.form-select:focus {
+  border-color: var(--accent-color);
+  box-shadow: 0 0 0 3px rgba(45, 212, 191, 0.15);
+}
