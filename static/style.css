@@ -359,25 +359,27 @@ textarea.form-control {
 .btn-info:hover { background: #2DD4BF; transform: translateY(-3px); }
 
 /* Loader with Progress */
-/* Updated Loader Styles */
+/* Enhanced Loader Styles */
 #loader {
   text-align: center;
-  padding: var(--spacing-base);
+  padding: 2rem;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 1.2rem;
-  background: rgba(255, 255, 255, 0.95);
-  border-radius: 16px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  backdrop-filter: blur(8px);
-  animation: fadeIn 0.5s ease-out;
+  gap: 1.5rem;
+  background: rgba(255, 255, 255, 0.98);
+  border-radius: 20px;
+  box-shadow: 
+    0 8px 32px rgba(30, 58, 138, 0.1),
+    0 0 0 1px rgba(255, 255, 255, 0.3);
+  backdrop-filter: blur(12px);
+  animation: fadeIn 0.4s ease-out;
   position: relative;
   overflow: hidden;
-  max-width: 300px;
-  margin: 0 auto;
+  max-width: 320px;
+  margin: 2rem auto;
+  border: 1px solid rgba(255, 255, 255, 0.4);
 }
 
 #loader::before {
@@ -389,18 +391,32 @@ textarea.form-control {
   height: 200%;
   background: conic-gradient(
     from 0deg,
-    rgba(45, 212, 191, 0.1) 0%,
-    rgba(45, 212, 191, 0.3) 20%,
-    rgba(45, 212, 191, 0.1) 40%,
-    transparent 60%
+    transparent 0%,
+    rgba(45, 212, 191, 0.1) 30%,
+    rgba(30, 58, 138, 0.1) 50%,
+    transparent 70%
   );
-  animation: rotateLoaderBg 3s linear infinite;
-  z-index: -1;
+  animation: rotateLoaderBg 4s linear infinite;
+  z-index: 0;
+}
+
+.loader-header {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  margin-bottom: 0.5rem;
+}
+
+.loader-header h3 {
+  margin: 0;
+  font-size: 1.2rem;
+  color: var(--primary-color);
+  font-weight: 600;
 }
 
 #loader .progress-container {
-  width: 120px;
-  height: 120px;
+  width: 140px;
+  height: 140px;
   position: relative;
   display: flex;
   align-items: center;
@@ -411,69 +427,79 @@ textarea.form-control {
   width: 100%;
   height: 100%;
   transform: rotate(-90deg);
-  filter: drop-shadow(0 0 8px rgba(45, 212, 191, 0.3));
+  filter: drop-shadow(0 0 12px rgba(45, 212, 191, 0.2));
 }
 
 #loader .progress-ring-circle {
   fill: none;
-  stroke: rgba(209, 213, 219, 0.3);
-  stroke-width: 8;
-  stroke-dasharray: 376.8;
+  stroke: rgba(209, 213, 219, 0.2);
+  stroke-width: 10;
+  stroke-dasharray: 439.6;
   stroke-dashoffset: 0;
 }
 
 #loader .progress-ring .progress {
   stroke: url(#progressGradient);
-  stroke-width: 8;
+  stroke-width: 10;
   stroke-linecap: round;
-  stroke-dashoffset: 376.8;
-  animation: progressAnimation 1.5s ease-in-out infinite alternate;
+  stroke-dashoffset: 439.6;
+  animation: progressAnimation 1.8s cubic-bezier(0.65, 0, 0.35, 1) infinite alternate;
 }
 
-#loader .progress-icon {
+.progress-content {
   position: absolute;
-  font-size: 2rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.progress-icons {
+  display: flex;
+  gap: 0.8rem;
+}
+
+.progress-icon {
+  font-size: 1.8rem;
   color: var(--accent-color);
-  animation: pulse 1.5s ease-in-out infinite;
+  animation: float 3s ease-in-out infinite;
 }
 
-#loader p {
-  font-size: 1rem;
-  color: var(--text-primary);
-  margin-top: 0.8rem;
+.progress-icon:nth-child(1) { animation-delay: 0s; }
+.progress-icon:nth-child(2) { animation-delay: 0.3s; }
+.progress-icon:nth-child(3) { animation-delay: 0.6s; }
+
+.progress-text {
+  font-size: 1.1rem;
   font-weight: 600;
-  text-align: center;
+  color: var(--text-primary);
+  margin-top: 0.5rem;
 }
 
-#loader #timeRemaining {
-  font-size: 0.9rem;
+#timeRemaining {
+  font-size: 0.95rem;
   color: var(--text-secondary);
-  background: rgba(249, 250, 251, 0.7);
-  padding: 0.5rem 1rem;
-  border-radius: 20px;
-  display: inline-block;
+  background: rgba(249, 250, 251, 0.8);
+  padding: 0.6rem 1.2rem;
+  border-radius: 24px;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  border: 1px solid rgba(209, 213, 219, 0.5);
 }
 
-/* SVG Gradient for Progress Ring */
-svg.defs-only {
-  display: block;
-  position: absolute;
-  height: 0;
-  width: 0;
-  margin: 0;
-  padding: 0;
-  border: none;
-  overflow: hidden;
+#timeRemaining i {
+  color: var(--accent-color);
 }
 
 /* Animations */
 @keyframes progressAnimation {
   0% {
-    stroke-dashoffset: 376.8;
-    opacity: 0.7;
+    stroke-dashoffset: 439.6;
+    opacity: 0.8;
   }
   100% {
-    stroke-dashoffset: 188.4;
+    stroke-dashoffset: 219.8;
     opacity: 1;
   }
 }
@@ -487,34 +513,51 @@ svg.defs-only {
   }
 }
 
-@keyframes pulse {
-  0% {
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-8px) rotate(5deg);
+  }
+}
+
+@keyframes iconPulse {
+  0%, 100% {
     transform: scale(1);
-    opacity: 0.8;
+    opacity: 0.9;
   }
   50% {
     transform: scale(1.1);
     opacity: 1;
   }
-  100% {
-    transform: scale(1);
-    opacity: 0.8;
-  }
 }
 
-@keyframes float {
-  0% {
-    transform: translateY(0px);
+@keyframes subtleGlow {
+  0%, 100% {
+    box-shadow: 0 0 0 rgba(45, 212, 191, 0);
   }
   50% {
-    transform: translateY(-5px);
-  }
-  100% {
-    transform: translateY(0px);
+    box-shadow: 0 0 15px rgba(45, 212, 191, 0.2);
   }
 }
 
-
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  #loader {
+    padding: 1.5rem;
+    max-width: 280px;
+  }
+  
+  #loader .progress-container {
+    width: 120px;
+    height: 120px;
+  }
+  
+  .progress-icon {
+    font-size: 1.5rem;
+  }
+}
 
 /* Results */
 .results {
