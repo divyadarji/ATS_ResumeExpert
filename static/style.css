@@ -359,52 +359,162 @@ textarea.form-control {
 .btn-info:hover { background: #2DD4BF; transform: translateY(-3px); }
 
 /* Loader with Progress */
+/* Updated Loader Styles */
 #loader {
   text-align: center;
   padding: var(--spacing-base);
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.8rem;
-  background: rgba(255, 255, 255, 0.9);
-  border-radius: 12px;
-  box-shadow: var(--card-shadow);
-  animation: fadeIn 1s ease-out;
+  justify-content: center;
+  gap: 1.2rem;
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 16px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(8px);
+  animation: fadeIn 0.5s ease-out;
+  position: relative;
+  overflow: hidden;
+  max-width: 300px;
+  margin: 0 auto;
+}
+
+#loader::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: conic-gradient(
+    from 0deg,
+    rgba(45, 212, 191, 0.1) 0%,
+    rgba(45, 212, 191, 0.3) 20%,
+    rgba(45, 212, 191, 0.1) 40%,
+    transparent 60%
+  );
+  animation: rotateLoaderBg 3s linear infinite;
+  z-index: -1;
 }
 
 #loader .progress-container {
-  width: 150px;
-  height: 150px;
+  width: 120px;
+  height: 120px;
   position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 #loader .progress-ring {
   width: 100%;
   height: 100%;
   transform: rotate(-90deg);
+  filter: drop-shadow(0 0 8px rgba(45, 212, 191, 0.3));
 }
 
 #loader .progress-ring-circle {
   fill: none;
-  stroke: #D1D5DB;
+  stroke: rgba(209, 213, 219, 0.3);
   stroke-width: 8;
-  stroke-dasharray: 423.62;
+  stroke-dasharray: 376.8;
   stroke-dashoffset: 0;
-  animation: progress 5s linear infinite;
 }
 
 #loader .progress-ring .progress {
-  stroke: var(--accent-color);
+  stroke: url(#progressGradient);
+  stroke-width: 8;
   stroke-linecap: round;
-  transition: stroke-dashoffset var(--transition-speed);
+  stroke-dashoffset: 376.8;
+  animation: progressAnimation 1.5s ease-in-out infinite alternate;
+}
+
+#loader .progress-icon {
+  position: absolute;
+  font-size: 2rem;
+  color: var(--accent-color);
+  animation: pulse 1.5s ease-in-out infinite;
 }
 
 #loader p {
-  font-size: 0.9rem;
+  font-size: 1rem;
   color: var(--text-primary);
   margin-top: 0.8rem;
-  font-weight: 500;
+  font-weight: 600;
+  text-align: center;
 }
+
+#loader #timeRemaining {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  background: rgba(249, 250, 251, 0.7);
+  padding: 0.5rem 1rem;
+  border-radius: 20px;
+  display: inline-block;
+}
+
+/* SVG Gradient for Progress Ring */
+svg.defs-only {
+  display: block;
+  position: absolute;
+  height: 0;
+  width: 0;
+  margin: 0;
+  padding: 0;
+  border: none;
+  overflow: hidden;
+}
+
+/* Animations */
+@keyframes progressAnimation {
+  0% {
+    stroke-dashoffset: 376.8;
+    opacity: 0.7;
+  }
+  100% {
+    stroke-dashoffset: 188.4;
+    opacity: 1;
+  }
+}
+
+@keyframes rotateLoaderBg {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes pulse {
+  0% {
+    transform: scale(1);
+    opacity: 0.8;
+  }
+  50% {
+    transform: scale(1.1);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 0.8;
+  }
+}
+
+@keyframes float {
+  0% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-5px);
+  }
+  100% {
+    transform: translateY(0px);
+  }
+}
+
+
 
 /* Results */
 .results {
