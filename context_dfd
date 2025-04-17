@@ -1,0 +1,8 @@
+// context_dfd
+digraph {
+	rankdir=LR
+	user [label=User shape=box]
+	system [label="Resume Processing System" shape=circle]
+	user -> system [label="Job Role, Resumes, JD, Action, Filters"]
+	system -> user [label="JD, Results, CSVs, Shortlist Confirmation"]
+}
