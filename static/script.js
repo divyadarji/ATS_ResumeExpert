@@ -10,9 +10,9 @@ const categoryFilters = document.getElementById('categoryFilters');
 const percentageThresholdSelect = document.getElementById('percentageThreshold');
 const dropzone = document.getElementById('dropzone');
 const fileInput = document.getElementById('resumes');
-const fileList = document.getElementById('file-list');
-const dropzoneText = document.getElementById('dropzone-text');
 const fileCount = document.getElementById('file-count');
+const viewFilesButton = document.getElementById('viewFilesButton');
+const modalFileList = document.getElementById('modalFileList');
 const visualizationDiv = document.getElementById('visualization');
 
 const SUPPORTED_EXTENSIONS = ['.pdf', '.docx', '.txt', '.png', '.jpg', '.jpeg'];
@@ -21,8 +21,9 @@ let summarizedData = [];
 let matchData = [];
 let categorizedResults = {};
 let currentAction = '';
+let currentDisplayCategory = ''; // Tracks the category for results display
 let countdownInterval;
-let currentCategory = '';
+let currentCategory = ''; // Tracks the category for download filters
 let pieChart, barChart; // Chart instances
 
 summarizeButton.onclick = () => submitForm('summarize');
@@ -68,7 +69,7 @@ const submitForm = async (action) => {
             matchData = results;
         }
 
-        displayResults(results, action);
+        displayResults(results, action, currentDisplayCategory); // Use currentDisplayCategory for results
         categoryFilters.style.display = 'block';
         downloadCsvButton.style.display = 'inline-block';
         downloadFilteredCsvButton.style.display = 'inline-block';
@@ -134,24 +135,26 @@ const formatLacking = (lackingText) => {
         ? lackingText.split("\n")
         : lackingText.split(/(?=\d+\.\s)/).filter(item => item.trim() !== "");
 
-    const formattedItems = items.map(item => {
-        return item.replace(/[\*\[\]":]+/g, "").trim();
-    });
+    const formattedItems = items.map((item, index) => {
+        return item.replace(/[\*\[\]":]+/g, "").trim() || `Item ${index + 1}`;
+    }).filter(item => item !== "Item 0");
 
-    return formattedItems.join("<br>");
+    return formattedItems.map((item, index) => `${index + 1}. ${item}`).join("<br>");
 };
 
-const displayResults = (results, action) => {
+const displayResults = (results, action, displayCategory) => {
     const percentageThreshold = parseFloat(percentageThresholdSelect.value) || 0;
-    const selectedCategories = Array.from(document.querySelectorAll('.category-checkbox:checked'))
-        .map(checkbox => checkbox.value);
-
     let filteredResults = results;
+
     if (action === 'match') {
         filteredResults = results.filter(result => {
             const percentage = parseFloat(result.percentage_match.replace('%', '')) || 0;
             return percentage >= percentageThreshold;
         });
+    }
+
+    if (displayCategory && categorizedResults[displayCategory]) {
+        filteredResults = categorizedResults[displayCategory];
     }
 
     if (action === 'match') {
@@ -162,14 +165,16 @@ const displayResults = (results, action) => {
         });
     }
 
+    const selectedCategories = Array.from(document.querySelectorAll('.category-checkbox:checked'))
+        .map(checkbox => checkbox.value); // This is for download filters, not results
+
     let output = '<h2>Results</h2>';
     output += '<p><strong>Applied Filters:</strong> ';
-    if (percentageThreshold > 0 && selectedCategories.length > 0) {
-        output += `Percentage Match >= ${percentageThreshold}%, Categories: ${selectedCategories.join(', ')}`;
-    } else if (percentageThreshold > 0) {
+    if (percentageThreshold > 0) {
         output += `Percentage Match >= ${percentageThreshold}%`;
-    } else if (selectedCategories.length > 0) {
-        output += `Categories: ${selectedCategories.join(', ')}`;
+    }
+    if (displayCategory) {
+        output += `${percentageThreshold > 0 ? ', ' : ''}Category: ${displayCategory}`;
     } else {
         output += 'None';
     }
@@ -215,15 +220,15 @@ const setupCategoryFilters = () => {
     const buttons = document.querySelectorAll('.category-btn');
     buttons.forEach(button => {
         button.onclick = () => {
-            currentCategory = button.getAttribute('data-category');
+            currentDisplayCategory = button.getAttribute('data-category'); // Update for results display
             buttons.forEach(btn => btn.classList.remove('active'));
             button.classList.add('active');
 
-            if (currentCategory) {
-                const filteredResults = categorizedResults[currentCategory] || [];
-                displayResults(filteredResults, currentAction);
+            if (currentDisplayCategory) {
+                const filteredResults = categorizedResults[currentDisplayCategory] || [];
+                displayResults(currentAction === 'summarize' ? summarizedData : matchData, currentAction, currentDisplayCategory);
             } else {
-                displayResults(currentAction === 'summarize' ? summarizedData : matchData, currentAction);
+                displayResults(currentAction === 'summarize' ? summarizedData : matchData, currentAction, '');
             }
             displayCharts(); // Update charts when category changes
         };
@@ -232,12 +237,7 @@ const setupCategoryFilters = () => {
 
 const setupPercentageFilter = () => {
     percentageThresholdSelect.onchange = () => {
-        if (currentCategory) {
-            const filteredResults = categorizedResults[currentCategory] || [];
-            displayResults(filteredResults, currentAction);
-        } else {
-            displayResults(currentAction === 'summarize' ? summarizedData : matchData, currentAction);
-        }
+        displayResults(currentAction === 'summarize' ? summarizedData : matchData, currentAction, currentDisplayCategory);
         displayCharts(); // Update charts when percentage filter changes
     };
 };
@@ -269,8 +269,6 @@ document.getElementById('generateJD').onclick = async () => {
 };
 
 downloadCsvButton.onclick = async () => {
-    const percentageThreshold = parseFloat(document.getElementById('downloadPercentageThreshold').value) || 0;
-
     const combinedData = [];
     summarizedData.forEach((summarized) => {
         const match = matchData.find((m) => m.filename === summarized.filename) || {};
@@ -286,8 +284,7 @@ downloadCsvButton.onclick = async () => {
 
     try {
         const response = await axios.post('/download_csv', {
-            summarized_data: dataToExport,
-            percentage_threshold: percentageThreshold
+            summarized_data: dataToExport
         }, {
             headers: { 'Content-Type': 'application/json' },
             responseType: 'blob',
@@ -303,7 +300,8 @@ downloadCsvButton.onclick = async () => {
         a.click();
         window.URL.revokeObjectURL(url);
     } catch (err) {
-        alert('Error downloading CSV. Please try again.');
+        alert(`Error downloading CSV: ${err.response?.data?.error || 'Please try again.'}`);
+        console.error('CSV Download Error:', err);
     }
 };
 
@@ -326,13 +324,13 @@ downloadFilteredCsvButton.onclick = async () => {
             justification: match.justification || "N/A",
             lacking: match.lacking || "N/A",
         };
-        if (summarized.categories.some(category => selectedCategories.includes(category))) {
+        if (summarized.categories?.some(category => selectedCategories.includes(category))) {
             filteredData.push(combined);
         }
     });
 
     const dataToExport = filteredData.length > 0 ? filteredData : matchData.filter(item =>
-        item.categories.some(category => selectedCategories.includes(category))
+        item.categories?.some(category => selectedCategories.includes(category))
     );
 
     try {
@@ -355,7 +353,8 @@ downloadFilteredCsvButton.onclick = async () => {
         a.click();
         window.URL.revokeObjectURL(url);
     } catch (err) {
-        alert('Error downloading filtered CSV. Please try again.');
+        alert(`Error downloading filtered CSV: ${err.response?.data?.error || 'Please try again.'}`);
+        console.error('Filtered CSV Download Error:', err);
     }
 };
 
@@ -381,10 +380,17 @@ shortlistButton.onclick = async () => {
     });
 
     const dataToExport = summarizedData.length > 0 ? combinedData : matchData;
+    const filteredResumes = dataToExport.filter(result => {
+        const percentage = parseFloat(result.percentage_match.replace('%', '')) || 0;
+        const categoryMatch = selectedCategories.length === 0 || (result.categories?.some(cat => selectedCategories.includes(cat)));
+        return percentage >= percentageThreshold && categoryMatch;
+    });
+
+    console.log('Filtered Resumes for Shortlisting:', filteredResumes);
 
     try {
         const response = await axios.post('/shortlist_resumes', {
-            summarized_data: dataToExport,
+            summarized_data: filteredResumes,
             percentage_threshold: percentageThreshold,
             categories: selectedCategories
         }, {
@@ -394,12 +400,14 @@ shortlistButton.onclick = async () => {
         if (response.data.message) {
             alert(response.data.message);
         } else {
-            alert('Failed to shortlist resumes. Please try again.');
+            alert('Failed to shortlist resumes. Please check the console for details.');
         }
     } catch (err) {
-        alert('Error shortlisting resumes: ' + (err.response?.data?.error || 'Please try again.'));
+        alert(`Error shortlisting resumes: ${err.response?.data?.error || 'Please try again.'}`);
+        console.error('Shortlist Error:', err);
     }
 };
+
 fileInput.setAttribute('accept', SUPPORTED_EXTENSIONS.join(','));
 
 dropzone.addEventListener('click', () => fileInput.click());
@@ -439,79 +447,87 @@ dropzone.addEventListener('drop', (e) => {
 
 function updateFileDisplay() {
     const files = fileInput.files;
-    fileList.innerHTML = '';
-    
-    if (!files.length) {
-        fileCount.textContent = 'No files selected';
-        dropzoneText.textContent = 'Drag & drop files here or click to browse (PDF, DOCX, TXT, PNG, JPG, JPEG)';
-        return;
+    fileCount.textContent = files.length > 0 ? `${files.length} file(s) selected` : 'No files selected';
+    viewFilesButton.style.display = files.length > 0 ? 'inline-block' : 'none';
+    if (files.length === 0) {
+        document.getElementById('dropzone-text').textContent = 'Drag & drop files here or click to browse (PDF, DOCX, TXT, PNG, JPG, JPEG)';
     }
-    
-    const validFiles = [];
-    Array.from(files).forEach(file => {
-        const ext = '.' + file.name.split('.').pop().toLowerCase();
-        if (SUPPORTED_EXTENSIONS.includes(ext)) {
-            validFiles.push(file);
-        } else {
-            alert(`File "${file.name}" is not supported. Supported types: ${SUPPORTED_EXTENSIONS.join(', ')}`);
-        }
-    });
-
-    if (validFiles.length === 0) {
-        fileCount.textContent = 'No valid files selected';
-        dropzoneText.textContent = 'Drag & drop files here or click to browse (PDF, DOCX, TXT, PNG, JPG, JPEG)';
-        fileInput.files = new DataTransfer().files;
-        return;
-    }
-
-    const dt = new DataTransfer();
-    validFiles.forEach(file => dt.items.add(file));
-    fileInput.files = dt.files;
-
-    fileCount.textContent = `${validFiles.length} file(s) selected`;
-    
-    const list = document.createElement('ul');
-    list.className = 'list-group';
-    
-    validFiles.forEach((file, index) => {
-        const item = document.createElement('li');
-        item.className = 'list-group-item d-flex justify-content-between align-items-center';
-        item.innerHTML = `
-            <span>${file.name}</span>
-            <span class="badge bg-secondary rounded-pill">${(file.size/1024).toFixed(1)}KB</span>
-            <button class="btn btn-sm btn-outline-danger" onclick="removeFile(${index})">
-                <i class="fas fa-times"></i>
-            </button>
-        `;
-        list.appendChild(item);
-    });
-    
-    fileList.appendChild(list);
 }
 
-window.removeFile = function(index) {
-    const dt = new DataTransfer();
+viewFilesButton.onclick = () => {
     const files = fileInput.files;
-    
-    for (let i = 0; i < files.length; i++) {
-        if (i !== index) dt.items.add(files[i]);
+    modalFileList.innerHTML = '';
+    if (files.length === 0) {
+        modalFileList.innerHTML = '<tr><td colspan="3">No files selected.</td></tr>';
+    } else {
+        Array.from(files).forEach((file, index) => {
+            const ext = '.' + file.name.split('.').pop().toLowerCase();
+            if (SUPPORTED_EXTENSIONS.includes(ext)) {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${file.name}</td>
+                    <td>${(file.size / 1024).toFixed(1)}KB</td>
+                    <td><button class="btn btn-sm btn-outline-danger delete-btn" data-index="${index}"><i class="fas fa-times"></i></button></td>
+                `;
+                modalFileList.appendChild(row);
+            } else {
+                alert(`File "${file.name}" is not supported. Supported types: ${SUPPORTED_EXTENSIONS.join(', ')}`);
+            }
+        });
     }
-    
-    fileInput.files = dt.files;
-    updateFileDisplay();
+    new bootstrap.Modal(document.getElementById('fileModal')).show();
 };
 
-// Visualization function
+// Event delegation for delete buttons
+modalFileList.addEventListener('click', (e) => {
+    if (e.target.closest('.delete-btn')) {
+        const index = parseInt(e.target.closest('.delete-btn').getAttribute('data-index'));
+        removeFile(index);
+    }
+});
+
+function removeFile(index) {
+    const dt = new DataTransfer();
+    const files = Array.from(fileInput.files);
+    
+    files.forEach((file, i) => {
+        if (i !== index) dt.items.add(file);
+    });
+    
+    fileInput.files = dt.files;
+    updateFileListInModal();
+    updateFileDisplay();
+}
+
+function updateFileListInModal() {
+    const files = fileInput.files;
+    modalFileList.innerHTML = '';
+    if (files.length === 0) {
+        modalFileList.innerHTML = '<tr><td colspan="3">No files selected.</td></tr>';
+    } else {
+        Array.from(files).forEach((file, index) => {
+            const ext = '.' + file.name.split('.').pop().toLowerCase();
+            if (SUPPORTED_EXTENSIONS.includes(ext)) {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${file.name}</td>
+                    <td>${(file.size / 1024).toFixed(1)}KB</td>
+                    <td><button class="btn btn-sm btn-outline-danger delete-btn" data-index="${index}"><i class="fas fa-times"></i></button></td>
+                `;
+                modalFileList.appendChild(row);
+            }
+        });
+    }
+}
+
 function displayCharts() {
     const percentageThreshold = parseFloat(percentageThresholdSelect.value) || 0;
     let dataToVisualize = categorizedResults;
 
-    // Filter by current category if selected
-    if (currentCategory) {
-        dataToVisualize = { [currentCategory]: categorizedResults[currentCategory] };
+    if (currentDisplayCategory) {
+        dataToVisualize = { [currentDisplayCategory]: categorizedResults[currentDisplayCategory] };
     }
 
-    // Apply percentage threshold for match action
     if (currentAction === 'match') {
         dataToVisualize = Object.fromEntries(
             Object.entries(dataToVisualize).map(([category, resumes]) => [
@@ -529,11 +545,9 @@ function displayCharts() {
     const total = counts.reduce((sum, count) => sum + count, 0);
     const percentages = counts.map(count => total > 0 ? ((count / total) * 100).toFixed(1) : 0);
 
-    // Destroy existing charts if they exist
     if (pieChart) pieChart.destroy();
     if (barChart) barChart.destroy();
 
-    // Pie Chart (Percentage Distribution)
     const pieCtx = document.getElementById('pieChart').getContext('2d');
     pieChart = new Chart(pieCtx, {
         type: 'pie',
@@ -557,7 +571,6 @@ function displayCharts() {
         }
     });
 
-    // Bar Chart (Count Distribution)
     const barCtx = document.getElementById('barChart').getContext('2d');
     barChart = new Chart(barCtx, {
         type: 'bar',
