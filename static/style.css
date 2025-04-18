@@ -86,8 +86,9 @@ body {
 
 .navbar-toggler {
   border: none;
-  padding: 0.2rem;
+  padding: 0.6rem;
   transition: transform var(--transition-speed);
+  font-size: 1rem;
   will-change: transform;
 }
 
@@ -97,26 +98,34 @@ body {
 }
 
 .navbar-collapse {
-  display: flex !important;
-  visibility: visible !important;
-  transition: none;
-  transform: none !important;
-  opacity: 1 !important;
-  overflow: visible !important;
-}
-
-.navbar-collapse.show {
-  animation: slideDownExpand 0.25s ease-out forwards;
+  transition: opacity var(--transition-speed) ease-out, visibility var(--transition-speed) ease-out;
+  visibility: visible;
+  opacity: 1;
 }
 
 .navbar-collapse.collapsing {
-  display: block !important;
-  opacity: 0.5;
-  overflow: visible !important;
+  transition: opacity var(--transition-speed) ease-out, visibility var(--transition-speed) ease-out;
+  opacity: 0;
+  visibility: hidden;
+}
+
+@media (max-width: 991px) {
+  .navbar-collapse {
+    display: none;
+    visibility: hidden;
+    opacity: 0;
+  }
+  
+  .navbar-collapse.show {
+    display: flex;
+    visibility: visible;
+    opacity: 1;
+    animation: slideDownExpand 0.2s ease-out forwards;
+  }
 }
 
 .navbar-nav {
-  display: flex !important;
+  display: flex;
   align-items: center;
   justify-content: flex-end;
 }
@@ -382,10 +391,6 @@ textarea.form-control {
   transform-origin: 50% 50%;
 }
 
-/* .btn:focus:not(:active)::after {
-  animation: ripple 1s ease-out;
-} */
-
 .btn-primary { background: var(--gradient-primary); border: none; color: var(--text-light); }
 .btn-primary:hover { background: linear-gradient(135deg, #1E40AF, #60A5FA); transform: translateY(-3px); }
 .btn-secondary { background: var(--gradient-secondary); border: none; color: var(--text-light); }
@@ -600,11 +605,6 @@ textarea.form-control {
   transform: scale(1.03);
 }
 
-/* .category-btn:hover {
-  background: #F3F4F6;
-  transform: scale(1.02);
-} */
-
 .form-select {
   border-radius: 10px;
   border: 1px solid #D1D5DB;
@@ -787,14 +787,8 @@ footer a:hover {
 }
 
 @keyframes slideDownExpand {
-  0% {
-    transform: translateY(-100%);
-    opacity: 0;
-  }
-  100% {
-    transform: translateY(0);
-    opacity: 1;
-  }
+  0% { opacity: 0; }
+  100% { opacity: 1; }
 }
 
 @keyframes progressAnimation {
@@ -883,22 +877,13 @@ footer a:hover {
   }
   
   .navbar-toggler {
-    padding: 0.15rem;
+    padding: 0.6rem;
     margin-right: 0.2rem;
   }
   
   .nav-link {
     font-size: 0.85rem;
     padding: 0.2rem 0.6rem;
-  }
-  
-  .navbar-collapse {
-    display: none !important;
-  }
-  
-  .navbar-collapse.show {
-    display: flex !important;
-    animation: slideDownExpand 0.2s ease-out forwards;
   }
   
   .hero-section {
@@ -1034,10 +1019,6 @@ footer a:hover {
   footer {
     padding: var(--spacing-base) 0;
   }
-  
-  .navbar-collapse.show {
-    animation: slideDownExpand 0.18s ease-out forwards;
-  }
 }
 
 @media (max-width: 575px) {
@@ -1072,287 +1053,4 @@ footer a:hover {
   main h4 {
     font-size: 0.8rem;
   }
-  
-  .form-label {
-    font-size: 0.8rem;
-  }
-  
-  .form-control {
-    font-size: 0.75rem;
-    padding: 4px;
-  }
-  
-  .results {
-    max-height: 250px;
-    padding: calc(var(--spacing-base) * 0.8);
-  }
-  
-  .list-group-item {
-    padding: 0.8rem;
-    margin-bottom: 0.6rem;
-  }
-  
-  .btn {
-    font-size: 0.8rem;
-    padding: 5px 12px;
-    margin: 0.2rem;
-  }
-  
-  #loader .progress-container {
-    width: 120px;
-    height: 120px;
-  }
-  
-  #loader p {
-    font-size: 0.8rem;
-  }
-  
-  #file-list {
-    max-height: 100px;
-    padding: 0.6rem;
-  }
-  
-  #file-list p {
-    font-size: 0.7rem;
-    margin: 0.2rem 0;
-  }
-  
-  #categoryFilters {
-    padding: calc(var(--spacing-base) * 0.8);
-  }
-  
-  #visualization {
-    padding: calc(var(--spacing-base) * 0.8);
-  }
-  
-  #visualization canvas {
-    max-height: 140px;
-  }
-  
-  footer p, footer a {
-    font-size: 0.7rem;
-    margin: 0.4rem;
-  }
-  
-  footer a {
-    display: block;
-    margin: 0.3rem 0;
-  }
-  
-  .navbar-collapse.show {
-    animation: slideDownExpand 0.15s ease-out forwards;
-  }
-}
-
-@media (min-width: 1400px) {
-  .container-fluid {
-    padding: var(--spacing-lg) 1.5rem;
-  }
-  
-  .hero-section {
-    padding: var(--spacing-lg) 0;
-  }
-  
-  .hero-section h1 {
-    font-size: 2rem;
-  }
-  
-  .hero-section .lead {
-    font-size: 1rem;
-    max-width: 700px;
-  }
-  
-  main .card {
-    padding: calc(var(--spacing-base) * 1.2);
-  }
-  
-  main h2 {
-    font-size: 1.5rem;
-  }
-  
-  main h3 {
-    font-size: 1.3rem;
-  }
-  
-  main h4 {
-    font-size: 1.1rem;
-  }
-  
-  .results {
-    max-height: 450px;
-  }
-  
-  #visualization canvas {
-    max-height: 300px;
-  }
-  
-  #loader .progress-container {
-    width: 200px;
-    height: 200px;
-  }
-  
-  #loader p {
-    font-size: 1rem;
-  }
-  
-  .category-btn {
-    font-size: 0.9rem;
-    padding: 6px 12px;
-  }
-  
-  .navbar-brand {
-    font-size: 1.2rem;
-    padding: 0.4rem 1rem;
-  }
-  
-  footer p, footer a {
-    font-size: 0.9rem;
-  }
-}
-
-/* Ensure the new select matches the By Match Percentage style */
-/* Style the checkbox container to match form-select appearance */
-.category-checkbox-container {
-  border-radius: 10px;
-  border: 1px solid #D1D5DB;
-  padding: 0.5rem;
-  background-color: #fff;
-  min-height: 100px;
-  max-height: 200px;
-  overflow-y: auto;
-  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.02);
-  transition: all var(--transition-speed);
-}
-
-.category-checkbox-container:focus-within {
-  border-color: var(--accent-color);
-  box-shadow: 0 0 0 3px rgba(45, 212, 191, 0.15);
-}
-
-.category-checkbox-container .form-check {
-  margin-bottom: 0.3rem;
-  padding: 0.2rem 0.5rem;
-  display: flex;
-  align-items: center;
-}
-
-.category-checkbox-container .form-check-input {
-  margin-top: 0;
-  margin-right: 0.5rem;
-  cursor: pointer;
-  width: 1em;
-  height: 1em;
-}
-
-.category-checkbox-container .form-check-input:checked {
-  background-color: var(--primary-color);
-  border-color: var(--primary-color);
-}
-
-.category-checkbox-container .form-check-label {
-  margin-left: 0;
-  font-size: 0.85rem;
-  color: var(--text-secondary);
-  cursor: pointer;
-  padding-left: 0.5rem;
-}
-
-/* Remove animation from the checkbox container */
-.category-checkbox-container {
-  animation: none !important;
-}
-
-/* Ensure the selected categories text fits well */
-#selectedCategories {
-  margin-top: 0.5rem;
-  word-break: break-word;
-}
-
-/* Modal Specific Styles */
-/* [Previous CSS remains unchanged until Modal Specific Styles] */
-
-/* Modal Specific Styles */
-.modal-content {
-  border-radius: 15px;
-}
-
-.modal-header {
-  border-bottom: 1px solid #D1D5DB;
-}
-
-.modal-footer {
-  border-top: 1px solid #D1D5DB;
-}
-
-#saveCategories {
-  background: var(--gradient-primary);
-  color: var(--text-light);
-  border: none;
-}
-
-#saveCategories:hover {
-  background: linear-gradient(135deg, #1E40AF, #60A5FA);
-  transform: translateY(-3px);
-}
-
-#categoryModal .modal-body .form-check {
-  display: flex;
-  align-items: center;
-  padding: 0.25rem 0;
-}
-
-#categoryModal .modal-body .form-check-input {
-  margin-top: 0;
-  margin-right: 0.5rem;
-  width: 1em;
-  height: 1em;
-}
-
-#categoryModal .modal-body .form-check-label {
-  min-width: 120px;
-  text-align: left;
-  padding-left: 0.5rem;
-  margin-bottom: 0;
-}
-
-#categoryModal .modal-body {
-  padding: 1rem;
-}
-#categoryModalButton {
-  border-radius: 10px; /* Match the form-select style */
-  border: 1px solid #D1D5DB;
-  padding: 6px 12px;
-  font-size: 0.85rem;
-  background: var(--gradient-primary);
-  color: var(--text-light);
-
-}
-
-#categoryModalButton:hover {
-  background: linear-gradient(135deg, #1E40AF, #60A5FA);
-  transform: none; /* Remove hover transform */
-  box-shadow: none; /* Remove hover shadow */
-}
-
-/* Ensure backdrop is removed when modal hides */
-.modal-backdrop {
-  background-color: rgba(0, 0, 0, 0.2); /* Reduced opacity to 20% */
-}
-
-.modal-backdrop.fade {
-  opacity: 0.5;
-}
-
-.modal-backdrop.fade.show {
-  opacity: 1; /* Ensure it fully applies the reduced opacity */
-}
-
-.modal-backdrop.fade.hide {
-  opacity: 0 !important;
-}
-
-/* Remove problematic float and margin settings */
-.form-check .form-check-input {
-  float: none;
-  margin-left: 0;
 }

@@ -1,3 +1,32 @@
+document.addEventListener('DOMContentLoaded', () => {
+    const navLinks = document.querySelectorAll('.nav-link');
+    const navbarCollapse = document.getElementById('navbarNav');
+    const navbarToggler = document.querySelector('.navbar-toggler');
+
+    // Prevent rapid touch events on mobile
+    let isToggling = false;
+    navbarToggler.addEventListener('touchstart', (event) => {
+        event.preventDefault(); // Prevent default touch behavior
+        if (!isToggling && window.innerWidth <= 991) {
+            isToggling = true;
+            navbarToggler.click(); // Trigger the native Bootstrap toggle
+            setTimeout(() => { isToggling = false; }, 300); // Reset after 300ms
+        }
+    });
+
+    // Close navbar on nav link click only on mobile
+    navLinks.forEach(link => {
+        link.addEventListener('click', () => {
+            if (navbarCollapse.classList.contains('show') && !isToggling && window.innerWidth <= 991) {
+                isToggling = true;
+                const bsCollapse = new bootstrap.Collapse(navbarCollapse, { toggle: false });
+                bsCollapse.hide();
+                setTimeout(() => { isToggling = false; }, 300); // Prevent rapid toggles
+            }
+        });
+    });
+});
+
 const axios = window.axios || (function() { throw new Error('Axios is not loaded. Please include axios.js'); })();
 
 const summarizeButton = document.getElementById('summarizeButton');
@@ -151,7 +180,6 @@ const displayResults = (results, action, displayCategory) => {
     const percentageThreshold = parseFloat(percentageThresholdSelect.value) || 0;
     let filteredResults = results;
 
-    // Filter by percentage match if threshold is set
     if (action === 'match' && percentageThreshold > 0) {
         filteredResults = results.filter(result => {
             const percentage = parseFloat(result.percentage_match.replace('%', '')) || 0;
@@ -159,14 +187,12 @@ const displayResults = (results, action, displayCategory) => {
         });
     }
 
-    // Filter by category if specified
     if (displayCategory && categorizedResults[displayCategory]) {
         filteredResults = filteredResults.filter(result =>
             result.categories?.includes(displayCategory) || (!result.categories && displayCategory === 'Uncategorized')
         );
     }
 
-    // Sort by percentage match for 'match' action
     if (action === 'match') {
         filteredResults.sort((a, b) => {
             let percentA = parseFloat(a.percentage_match.replace('%', '')) || 0;
@@ -483,7 +509,18 @@ viewFilesButton.onclick = () => {
             });
             fileInput.files = dataTransfer.files;
             updateFileDisplay();
-            e.target.closest('tr').remove();
+            modalFileList.innerHTML = '';
+            for (let file of fileInput.files) {
+                if (SUPPORTED_EXTENSIONS.some(ext => file.name.toLowerCase().endsWith(ext))) {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${file.name}</td>
+                        <td>${(file.size / 1024).toFixed(2)} KB</td>
+                        <td><button class="btn btn-danger btn-sm remove-file" data-index="${Array.from(fileInput.files).indexOf(file)}">Remove</button></td>
+                    `;
+                    modalFileList.appendChild(row);
+                }
+            }
         };
     });
 
@@ -491,44 +528,68 @@ viewFilesButton.onclick = () => {
     fileModal.show();
 };
 
+const updateSelectedCategoriesDisplay = () => {
+    const selectedCategories = Array.from(document.querySelectorAll('.category-checkbox:checked'))
+        .map(checkbox => checkbox.value);
+    selectedCategoriesDisplay.textContent = `Selected categories: ${selectedCategories.length > 0 ? selectedCategories.join(', ') : 'None'}`;
+};
+
+categoryModalButton.onclick = () => {
+    const fileModal = bootstrap.Modal.getInstance(document.getElementById('fileModal'));
+    if (fileModal) fileModal.hide();
+};
+
+saveCategoriesButton.onclick = () => {
+    updateSelectedCategoriesDisplay();
+};
+
+document.querySelectorAll('.category-checkbox').forEach(checkbox => {
+    checkbox.addEventListener('change', updateSelectedCategoriesDisplay);
+});
+
 const displayCharts = () => {
-    if (pieChart) pieChart.destroy();
-    if (barChart) barChart.destroy();
-
     const percentageThreshold = parseFloat(percentageThresholdSelect.value) || 0;
-    let dataToVisualize = categorizedResults;
+    let filteredResults = currentAction === 'summarize' ? summarizedData : matchData;
 
-    if (currentDisplayCategory) {
-        dataToVisualize = { [currentDisplayCategory]: categorizedResults[currentDisplayCategory] };
+    if (currentAction === 'match' && percentageThreshold > 0) {
+        filteredResults = filteredResults.filter(result => {
+            const percentage = parseFloat(result.percentage_match.replace('%', '')) || 0;
+            return percentage >= percentageThreshold;
+        });
     }
 
-    if (currentAction === 'match') {
-        dataToVisualize = Object.fromEntries(
-            Object.entries(dataToVisualize).map(([category, resumes]) => [
-                category,
-                resumes.filter(resume => {
-                    const percentage = parseFloat(resume.percentage_match.replace('%', '')) || 0;
-                    return percentage >= percentageThreshold;
-                })
-            ])
+    if (currentDisplayCategory && categorizedResults[currentDisplayCategory]) {
+        filteredResults = filteredResults.filter(result =>
+            result.categories?.includes(currentDisplayCategory) || (!result.categories && currentDisplayCategory === 'Uncategorized')
         );
     }
 
-    const categories = Object.keys(dataToVisualize);
-    const counts = categories.map(category => dataToVisualize[category].length);
-    const total = counts.reduce((sum, count) => sum + count, 0);
-    const percentages = counts.map(count => total > 0 ? ((count / total) * 100).toFixed(1) : 0);
+    const categoryCounts = {};
+    filteredResults.forEach(result => {
+        const categories = result.categories || ['Uncategorized'];
+        categories.forEach(category => {
+            categoryCounts[category] = (categoryCounts[category] || 0) + 1;
+        });
+    });
+
+    const labels = Object.keys(categoryCounts);
+    const data = Object.values(categoryCounts);
+
+    visualizationDiv.style.display = 'block';
+
+    if (pieChart) pieChart.destroy();
+    if (barChart) barChart.destroy();
 
     const pieCtx = document.getElementById('pieChart').getContext('2d');
     pieChart = new Chart(pieCtx, {
         type: 'pie',
         data: {
-            labels: categories.length ? categories : ['No Data'],
+            labels: labels,
             datasets: [{
-                data: percentages.length ? percentages : [1],
+                data: data,
                 backgroundColor: [
                     '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF',
-                    '#FF9F40', '#C9CBCF', '#7BC043', '#F4A261', '#E76F51'
+                    '#FF9F40', '#66BB6A', '#EF5350', '#29B6F6', '#AB47BC'
                 ],
             }]
         },
@@ -536,8 +597,7 @@ const displayCharts = () => {
             responsive: true,
             plugins: {
                 legend: { position: 'top' },
-                title: { display: true, text: 'Percentage Distribution by Category' },
-                tooltip: { callbacks: { label: context => `${context.label}: ${context.raw}%` } }
+                title: { display: true, text: 'Category Distribution (Pie)' }
             }
         }
     });
@@ -546,10 +606,10 @@ const displayCharts = () => {
     barChart = new Chart(barCtx, {
         type: 'bar',
         data: {
-            labels: categories.length ? categories : ['No Data'],
+            labels: labels,
             datasets: [{
                 label: 'Number of Resumes',
-                data: counts.length ? counts : [0],
+                data: data,
                 backgroundColor: '#36A2EB',
             }]
         },
@@ -557,88 +617,11 @@ const displayCharts = () => {
             responsive: true,
             plugins: {
                 legend: { display: false },
-                title: { display: true, text: 'Count of Resumes by Category' }
+                title: { display: true, text: 'Category Distribution (Bar)' }
             },
             scales: {
-                y: { beginAtZero: true, title: { display: true, text: 'Count' } },
-                x: { title: { display: true, text: 'Category' } }
+                y: { beginAtZero: true }
             }
         }
     });
-
-    visualizationDiv.style.display = total > 0 ? 'block' : 'none';
 };
-
-// Category Modal Handling
-// Category Modal Handling
-let selectedCategories = [];
-
-categoryModalButton.addEventListener('click', () => {
-    const modalBody = document.querySelector('#categoryModal .modal-body');
-    modalBody.innerHTML = ''; // Clear existing content
-
-    const categories = ['Frontend', 'Backend', 'Full Stack', 'Mobile', 'AI/ML', 'Testing', 'Cloud', 'DevOps', 'HR', 'Uncategorized'];
-    categories.forEach(category => {
-        const div = document.createElement('div');
-        div.className = 'form-check d-flex align-items-center';
-        div.style.marginBottom = '0.5rem';
-        div.innerHTML = `
-            <input class="form-check-input category-checkbox" type="checkbox" value="${category}" id="category_${category}" style="margin-top: 0;">
-            <label class="form-check-label ms-3" for="category_${category}" style="min-width: 120px; text-align: left; padding-left: 0.5rem;">
-                ${category}
-            </label>
-        `;
-        modalBody.appendChild(div);
-    });
-
-    const modal = new bootstrap.Modal(document.getElementById('categoryModal'));
-    modal.show();
-});
-
-saveCategoriesButton.addEventListener('click', () => {
-    selectedCategories = Array.from(document.querySelectorAll('#categoryModal .modal-body .category-checkbox:checked'))
-        .map(checkbox => checkbox.value);
-    selectedCategoriesDisplay.textContent = `Selected categories: ${selectedCategories.length > 0 ? selectedCategories.join(', ') : 'None'}`;
-    
-    // Update results and charts
-    displayResults(currentAction === 'summarize' ? summarizedData : matchData, currentAction, currentDisplayCategory);
-    displayCharts();
-
-    // Hide the modal using Bootstrap's method
-    bootstrap.Modal.getInstance(document.getElementById('categoryModal')).hide();
-});
-
-// Handle modal hidden event to ensure backdrop is removed
-document.getElementById('categoryModal').addEventListener('hidden.bs.modal', function () {
-    const backdrops = document.getElementsByClassName('modal-backdrop');
-    while (backdrops.length > 0) {
-        backdrops[0].parentNode.removeChild(backdrops[0]);
-    }
-    document.body.style.overflow = 'auto'; // Ensure body scroll is restored
-});
-
-// Remove the custom close button handler if it exists
-const closeButton = document.querySelector('#categoryModal .btn-close');
-if (closeButton) {
-    closeButton.removeEventListener('click', handleClose); // Remove any existing custom handler
-    // No need to re-add it; let data-bs-dismiss handle it
-}
-// Handle modal close button
-document.querySelector('#categoryModal .btn-close').addEventListener('click', () => {
-    const modal = bootstrap.Modal.getInstance(document.getElementById('categoryModal'));
-    if (modal) {
-        modal.hide();
-        // Forcefully remove backdrop if it persists
-        setTimeout(() => {
-            const backdrops = document.getElementsByClassName('modal-backdrop');
-            for (let backdrop of backdrops) {
-                backdrop.parentNode.removeChild(backdrop);
-            }
-        }, 300); // Matches CSS transition duration
-    }
-});
-
-// Initialize charts on page load if data exists
-if (summarizedData.length > 0 || matchData.length > 0) {
-    displayCharts();
-}
