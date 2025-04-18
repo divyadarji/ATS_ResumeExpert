@@ -382,9 +382,9 @@ textarea.form-control {
   transform-origin: 50% 50%;
 }
 
-.btn:focus:not(:active)::after {
+/* .btn:focus:not(:active)::after {
   animation: ripple 1s ease-out;
-}
+} */
 
 .btn-primary { background: var(--gradient-primary); border: none; color: var(--text-light); }
 .btn-primary:hover { background: linear-gradient(135deg, #1E40AF, #60A5FA); transform: translateY(-3px); }
@@ -600,10 +600,10 @@ textarea.form-control {
   transform: scale(1.03);
 }
 
-.category-btn:hover {
+/* .category-btn:hover {
   background: #F3F4F6;
   transform: scale(1.02);
-}
+} */
 
 .form-select {
   border-radius: 10px;
@@ -1317,6 +1317,21 @@ footer a:hover {
 
 #categoryModal .modal-body {
   padding: 1rem;
+}
+#categoryModalButton {
+  border-radius: 10px; /* Match the form-select style */
+  border: 1px solid #D1D5DB;
+  padding: 6px 12px;
+  font-size: 0.85rem;
+  background: var(--gradient-primary);
+  color: var(--text-light);
+
+}
+
+#categoryModalButton:hover {
+  background: linear-gradient(135deg, #1E40AF, #60A5FA);
+  transform: none; /* Remove hover transform */
+  box-shadow: none; /* Remove hover shadow */
 }
 
 /* Ensure backdrop is removed when modal hides */

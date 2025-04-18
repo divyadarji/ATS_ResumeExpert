@@ -570,6 +570,7 @@ const displayCharts = () => {
 };
 
 // Category Modal Handling
+// Category Modal Handling
 let selectedCategories = [];
 
 categoryModalButton.addEventListener('click', () => {
@@ -603,20 +604,25 @@ saveCategoriesButton.addEventListener('click', () => {
     displayResults(currentAction === 'summarize' ? summarizedData : matchData, currentAction, currentDisplayCategory);
     displayCharts();
 
-    // Hide the modal and force backdrop removal
-    const modal = bootstrap.Modal.getInstance(document.getElementById('categoryModal'));
-    if (modal) {
-        modal.hide();
-        // Forcefully remove backdrop if it persists
-        setTimeout(() => {
-            const backdrops = document.getElementsByClassName('modal-backdrop');
-            for (let backdrop of backdrops) {
-                backdrop.parentNode.removeChild(backdrop);
-            }
-        }, 300); // Matches CSS transition duration
-    }
+    // Hide the modal using Bootstrap's method
+    bootstrap.Modal.getInstance(document.getElementById('categoryModal')).hide();
 });
 
+// Handle modal hidden event to ensure backdrop is removed
+document.getElementById('categoryModal').addEventListener('hidden.bs.modal', function () {
+    const backdrops = document.getElementsByClassName('modal-backdrop');
+    while (backdrops.length > 0) {
+        backdrops[0].parentNode.removeChild(backdrops[0]);
+    }
+    document.body.style.overflow = 'auto'; // Ensure body scroll is restored
+});
+
+// Remove the custom close button handler if it exists
+const closeButton = document.querySelector('#categoryModal .btn-close');
+if (closeButton) {
+    closeButton.removeEventListener('click', handleClose); // Remove any existing custom handler
+    // No need to re-add it; let data-bs-dismiss handle it
+}
 // Handle modal close button
 document.querySelector('#categoryModal .btn-close').addEventListener('click', () => {
     const modal = bootstrap.Modal.getInstance(document.getElementById('categoryModal'));
