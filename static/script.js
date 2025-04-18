@@ -1,3 +1,5 @@
+const axios = window.axios || (function() { throw new Error('Axios is not loaded. Please include axios.js'); })();
+
 const summarizeButton = document.getElementById('summarizeButton');
 const matchButton = document.getElementById('matchButton');
 const loader = document.getElementById('loader');
@@ -14,6 +16,9 @@ const fileCount = document.getElementById('file-count');
 const viewFilesButton = document.getElementById('viewFilesButton');
 const modalFileList = document.getElementById('modalFileList');
 const visualizationDiv = document.getElementById('visualization');
+const selectedCategoriesDisplay = document.getElementById('selectedCategories');
+const categoryModalButton = document.getElementById('categoryModalButton');
+const saveCategoriesButton = document.getElementById('saveCategories');
 
 const SUPPORTED_EXTENSIONS = ['.pdf', '.docx', '.txt', '.png', '.jpg', '.jpeg'];
 
@@ -21,10 +26,10 @@ let summarizedData = [];
 let matchData = [];
 let categorizedResults = {};
 let currentAction = '';
-let currentDisplayCategory = ''; // Tracks the category for results display
+let currentDisplayCategory = '';
 let countdownInterval;
-let currentCategory = ''; // Tracks the category for download filters
-let pieChart, barChart; // Chart instances
+let currentCategory = '';
+let pieChart, barChart;
 
 summarizeButton.onclick = () => submitForm('summarize');
 matchButton.onclick = () => {
@@ -69,7 +74,7 @@ const submitForm = async (action) => {
             matchData = results;
         }
 
-        displayResults(results, action, currentDisplayCategory); // Use currentDisplayCategory for results
+        displayResults(results, action, currentDisplayCategory);
         categoryFilters.style.display = 'block';
         downloadCsvButton.style.display = 'inline-block';
         downloadFilteredCsvButton.style.display = 'inline-block';
@@ -79,7 +84,7 @@ const submitForm = async (action) => {
 
         setupCategoryFilters();
         setupPercentageFilter();
-        displayCharts(); // Render charts after processing
+        displayCharts();
     } catch (err) {
         const errorMessage = err.response?.data?.error || 'Error processing resumes. Please try again.';
         alert(errorMessage);
@@ -146,17 +151,22 @@ const displayResults = (results, action, displayCategory) => {
     const percentageThreshold = parseFloat(percentageThresholdSelect.value) || 0;
     let filteredResults = results;
 
-    if (action === 'match') {
+    // Filter by percentage match if threshold is set
+    if (action === 'match' && percentageThreshold > 0) {
         filteredResults = results.filter(result => {
             const percentage = parseFloat(result.percentage_match.replace('%', '')) || 0;
             return percentage >= percentageThreshold;
         });
     }
 
+    // Filter by category if specified
     if (displayCategory && categorizedResults[displayCategory]) {
-        filteredResults = categorizedResults[displayCategory];
+        filteredResults = filteredResults.filter(result =>
+            result.categories?.includes(displayCategory) || (!result.categories && displayCategory === 'Uncategorized')
+        );
     }
 
+    // Sort by percentage match for 'match' action
     if (action === 'match') {
         filteredResults.sort((a, b) => {
             let percentA = parseFloat(a.percentage_match.replace('%', '')) || 0;
@@ -164,9 +174,6 @@ const displayResults = (results, action, displayCategory) => {
             return percentB - percentA;
         });
     }
-
-    const selectedCategories = Array.from(document.querySelectorAll('.category-checkbox:checked'))
-        .map(checkbox => checkbox.value); // This is for download filters, not results
 
     let output = '<h2>Results</h2>';
     output += '<p><strong>Applied Filters:</strong> ';
@@ -220,7 +227,7 @@ const setupCategoryFilters = () => {
     const buttons = document.querySelectorAll('.category-btn');
     buttons.forEach(button => {
         button.onclick = () => {
-            currentDisplayCategory = button.getAttribute('data-category'); // Update for results display
+            currentDisplayCategory = button.getAttribute('data-category');
             buttons.forEach(btn => btn.classList.remove('active'));
             button.classList.add('active');
 
@@ -230,7 +237,7 @@ const setupCategoryFilters = () => {
             } else {
                 displayResults(currentAction === 'summarize' ? summarizedData : matchData, currentAction, '');
             }
-            displayCharts(); // Update charts when category changes
+            displayCharts();
         };
     });
 };
@@ -238,7 +245,7 @@ const setupCategoryFilters = () => {
 const setupPercentageFilter = () => {
     percentageThresholdSelect.onchange = () => {
         displayResults(currentAction === 'summarize' ? summarizedData : matchData, currentAction, currentDisplayCategory);
-        displayCharts(); // Update charts when percentage filter changes
+        displayCharts();
     };
 };
 
@@ -418,109 +425,76 @@ fileInput.addEventListener('change', () => {
 
 dropzone.addEventListener('dragover', (e) => {
     e.preventDefault();
-    dropzone.style.borderColor = '#0d6efd';
-    dropzone.style.backgroundColor = '#f0f7ff';
+    dropzone.classList.add('dragover');
 });
 
 dropzone.addEventListener('dragleave', () => {
-    dropzone.style.borderColor = '#ccc';
-    dropzone.style.backgroundColor = '';
+    dropzone.classList.remove('dragover');
 });
 
 dropzone.addEventListener('drop', (e) => {
     e.preventDefault();
-    dropzone.style.borderColor = '#ccc';
-    dropzone.style.backgroundColor = '';
-    
-    if (e.dataTransfer.files.length) {
-        const existingFiles = Array.from(fileInput.files);
-        const newFiles = Array.from(e.dataTransfer.files);
-        const combinedFiles = [...existingFiles, ...newFiles];
-        
-        const dt = new DataTransfer();
-        combinedFiles.forEach(file => dt.items.add(file));
-        
-        fileInput.files = dt.files;
-        updateFileDisplay();
-    }
+    dropzone.classList.remove('dragover');
+    const files = e.dataTransfer.files;
+    fileInput.files = files;
+    updateFileDisplay();
 });
 
-function updateFileDisplay() {
+const updateFileDisplay = () => {
     const files = fileInput.files;
-    fileCount.textContent = files.length > 0 ? `${files.length} file(s) selected` : 'No files selected';
+    fileCount.textContent = `${files.length} file${files.length !== 1 ? 's' : ''} selected`;
     viewFilesButton.style.display = files.length > 0 ? 'inline-block' : 'none';
-    if (files.length === 0) {
-        document.getElementById('dropzone-text').textContent = 'Drag & drop files here or click to browse (PDF, DOCX, TXT, PNG, JPG, JPEG)';
-    }
-}
 
-viewFilesButton.onclick = () => {
-    const files = fileInput.files;
-    modalFileList.innerHTML = '';
-    if (files.length === 0) {
-        modalFileList.innerHTML = '<tr><td colspan="3">No files selected.</td></tr>';
-    } else {
-        Array.from(files).forEach((file, index) => {
-            const ext = '.' + file.name.split('.').pop().toLowerCase();
-            if (SUPPORTED_EXTENSIONS.includes(ext)) {
-                const row = document.createElement('tr');
-                row.innerHTML = `
-                    <td>${file.name}</td>
-                    <td>${(file.size / 1024).toFixed(1)}KB</td>
-                    <td><button class="btn btn-sm btn-outline-danger delete-btn" data-index="${index}"><i class="fas fa-times"></i></button></td>
-                `;
-                modalFileList.appendChild(row);
-            } else {
-                alert(`File "${file.name}" is not supported. Supported types: ${SUPPORTED_EXTENSIONS.join(', ')}`);
+    if (files.length > 0) {
+        let fileListHTML = '';
+        for (let file of files) {
+            if (SUPPORTED_EXTENSIONS.some(ext => file.name.toLowerCase().endsWith(ext))) {
+                fileListHTML += `<p>${file.name} (${(file.size / 1024).toFixed(2)} KB)</p>`;
             }
-        });
+        }
+        document.getElementById('file-list').innerHTML = fileListHTML;
+        document.getElementById('file-list').style.display = 'block';
+    } else {
+        document.getElementById('file-list').style.display = 'none';
     }
-    new bootstrap.Modal(document.getElementById('fileModal')).show();
 };
 
-// Event delegation for delete buttons
-modalFileList.addEventListener('click', (e) => {
-    if (e.target.closest('.delete-btn')) {
-        const index = parseInt(e.target.closest('.delete-btn').getAttribute('data-index'));
-        removeFile(index);
-    }
-});
-
-function removeFile(index) {
-    const dt = new DataTransfer();
-    const files = Array.from(fileInput.files);
-    
-    files.forEach((file, i) => {
-        if (i !== index) dt.items.add(file);
-    });
-    
-    fileInput.files = dt.files;
-    updateFileListInModal();
-    updateFileDisplay();
-}
-
-function updateFileListInModal() {
-    const files = fileInput.files;
+viewFilesButton.onclick = () => {
     modalFileList.innerHTML = '';
-    if (files.length === 0) {
-        modalFileList.innerHTML = '<tr><td colspan="3">No files selected.</td></tr>';
-    } else {
-        Array.from(files).forEach((file, index) => {
-            const ext = '.' + file.name.split('.').pop().toLowerCase();
-            if (SUPPORTED_EXTENSIONS.includes(ext)) {
-                const row = document.createElement('tr');
-                row.innerHTML = `
-                    <td>${file.name}</td>
-                    <td>${(file.size / 1024).toFixed(1)}KB</td>
-                    <td><button class="btn btn-sm btn-outline-danger delete-btn" data-index="${index}"><i class="fas fa-times"></i></button></td>
-                `;
-                modalFileList.appendChild(row);
-            }
-        });
+    const files = fileInput.files;
+    for (let file of files) {
+        if (SUPPORTED_EXTENSIONS.some(ext => file.name.toLowerCase().endsWith(ext))) {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${file.name}</td>
+                <td>${(file.size / 1024).toFixed(2)} KB</td>
+                <td><button class="btn btn-danger btn-sm remove-file" data-index="${Array.from(files).indexOf(file)}">Remove</button></td>
+            `;
+            modalFileList.appendChild(row);
+        }
     }
-}
 
-function displayCharts() {
+    document.querySelectorAll('.remove-file').forEach(button => {
+        button.onclick = (e) => {
+            const index = parseInt(e.target.getAttribute('data-index'));
+            const dataTransfer = new DataTransfer();
+            Array.from(fileInput.files).forEach((file, i) => {
+                if (i !== index) dataTransfer.items.add(file);
+            });
+            fileInput.files = dataTransfer.files;
+            updateFileDisplay();
+            e.target.closest('tr').remove();
+        };
+    });
+
+    const fileModal = new bootstrap.Modal(document.getElementById('fileModal'));
+    fileModal.show();
+};
+
+const displayCharts = () => {
+    if (pieChart) pieChart.destroy();
+    if (barChart) barChart.destroy();
+
     const percentageThreshold = parseFloat(percentageThresholdSelect.value) || 0;
     let dataToVisualize = categorizedResults;
 
@@ -545,16 +519,13 @@ function displayCharts() {
     const total = counts.reduce((sum, count) => sum + count, 0);
     const percentages = counts.map(count => total > 0 ? ((count / total) * 100).toFixed(1) : 0);
 
-    if (pieChart) pieChart.destroy();
-    if (barChart) barChart.destroy();
-
     const pieCtx = document.getElementById('pieChart').getContext('2d');
     pieChart = new Chart(pieCtx, {
         type: 'pie',
         data: {
-            labels: categories,
+            labels: categories.length ? categories : ['No Data'],
             datasets: [{
-                data: percentages,
+                data: percentages.length ? percentages : [1],
                 backgroundColor: [
                     '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF',
                     '#FF9F40', '#C9CBCF', '#7BC043', '#F4A261', '#E76F51'
@@ -575,10 +546,10 @@ function displayCharts() {
     barChart = new Chart(barCtx, {
         type: 'bar',
         data: {
-            labels: categories,
+            labels: categories.length ? categories : ['No Data'],
             datasets: [{
                 label: 'Number of Resumes',
-                data: counts,
+                data: counts.length ? counts : [0],
                 backgroundColor: '#36A2EB',
             }]
         },
@@ -596,4 +567,72 @@ function displayCharts() {
     });
 
     visualizationDiv.style.display = total > 0 ? 'block' : 'none';
+};
+
+// Category Modal Handling
+let selectedCategories = [];
+
+categoryModalButton.addEventListener('click', () => {
+    const modalBody = document.querySelector('#categoryModal .modal-body');
+    modalBody.innerHTML = ''; // Clear existing content
+
+    const categories = ['Frontend', 'Backend', 'Full Stack', 'Mobile', 'AI/ML', 'Testing', 'Cloud', 'DevOps', 'HR', 'Uncategorized'];
+    categories.forEach(category => {
+        const div = document.createElement('div');
+        div.className = 'form-check d-flex align-items-center';
+        div.style.marginBottom = '0.5rem';
+        div.innerHTML = `
+            <input class="form-check-input category-checkbox" type="checkbox" value="${category}" id="category_${category}" style="margin-top: 0;">
+            <label class="form-check-label ms-3" for="category_${category}" style="min-width: 120px; text-align: left; padding-left: 0.5rem;">
+                ${category}
+            </label>
+        `;
+        modalBody.appendChild(div);
+    });
+
+    const modal = new bootstrap.Modal(document.getElementById('categoryModal'));
+    modal.show();
+});
+
+saveCategoriesButton.addEventListener('click', () => {
+    selectedCategories = Array.from(document.querySelectorAll('#categoryModal .modal-body .category-checkbox:checked'))
+        .map(checkbox => checkbox.value);
+    selectedCategoriesDisplay.textContent = `Selected categories: ${selectedCategories.length > 0 ? selectedCategories.join(', ') : 'None'}`;
+    
+    // Update results and charts
+    displayResults(currentAction === 'summarize' ? summarizedData : matchData, currentAction, currentDisplayCategory);
+    displayCharts();
+
+    // Hide the modal and force backdrop removal
+    const modal = bootstrap.Modal.getInstance(document.getElementById('categoryModal'));
+    if (modal) {
+        modal.hide();
+        // Forcefully remove backdrop if it persists
+        setTimeout(() => {
+            const backdrops = document.getElementsByClassName('modal-backdrop');
+            for (let backdrop of backdrops) {
+                backdrop.parentNode.removeChild(backdrop);
+            }
+        }, 300); // Matches CSS transition duration
+    }
+});
+
+// Handle modal close button
+document.querySelector('#categoryModal .btn-close').addEventListener('click', () => {
+    const modal = bootstrap.Modal.getInstance(document.getElementById('categoryModal'));
+    if (modal) {
+        modal.hide();
+        // Forcefully remove backdrop if it persists
+        setTimeout(() => {
+            const backdrops = document.getElementsByClassName('modal-backdrop');
+            for (let backdrop of backdrops) {
+                backdrop.parentNode.removeChild(backdrop);
+            }
+        }, 300); // Matches CSS transition duration
+    }
+});
+
+// Initialize charts on page load if data exists
+if (summarizedData.length > 0 || matchData.length > 0) {
+    displayCharts();
 }

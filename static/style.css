@@ -653,14 +653,14 @@ textarea.form-control {
 }
 
 .modal-body::-webkit-scrollbar {
-  width: 10px; /* Fixed width for the scrollbar */
+  width: 10px;
   background-color: #F9FAFB;
 }
 
 .modal-body::-webkit-scrollbar-thumb {
   background-color: #D1D5DB;
   border-radius: 5px;
-  border: 2px solid #F9FAFB; /* Creates padding inside the thumb */
+  border: 2px solid #F9FAFB;
 }
 
 .modal-body::-webkit-scrollbar-thumb:hover {
@@ -1208,4 +1208,136 @@ footer a:hover {
   footer p, footer a {
     font-size: 0.9rem;
   }
+}
+
+/* Ensure the new select matches the By Match Percentage style */
+/* Style the checkbox container to match form-select appearance */
+.category-checkbox-container {
+  border-radius: 10px;
+  border: 1px solid #D1D5DB;
+  padding: 0.5rem;
+  background-color: #fff;
+  min-height: 100px;
+  max-height: 200px;
+  overflow-y: auto;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.02);
+  transition: all var(--transition-speed);
+}
+
+.category-checkbox-container:focus-within {
+  border-color: var(--accent-color);
+  box-shadow: 0 0 0 3px rgba(45, 212, 191, 0.15);
+}
+
+.category-checkbox-container .form-check {
+  margin-bottom: 0.3rem;
+  padding: 0.2rem 0.5rem;
+  display: flex;
+  align-items: center;
+}
+
+.category-checkbox-container .form-check-input {
+  margin-top: 0;
+  margin-right: 0.5rem;
+  cursor: pointer;
+  width: 1em;
+  height: 1em;
+}
+
+.category-checkbox-container .form-check-input:checked {
+  background-color: var(--primary-color);
+  border-color: var(--primary-color);
+}
+
+.category-checkbox-container .form-check-label {
+  margin-left: 0;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  cursor: pointer;
+  padding-left: 0.5rem;
+}
+
+/* Remove animation from the checkbox container */
+.category-checkbox-container {
+  animation: none !important;
+}
+
+/* Ensure the selected categories text fits well */
+#selectedCategories {
+  margin-top: 0.5rem;
+  word-break: break-word;
+}
+
+/* Modal Specific Styles */
+/* [Previous CSS remains unchanged until Modal Specific Styles] */
+
+/* Modal Specific Styles */
+.modal-content {
+  border-radius: 15px;
+}
+
+.modal-header {
+  border-bottom: 1px solid #D1D5DB;
+}
+
+.modal-footer {
+  border-top: 1px solid #D1D5DB;
+}
+
+#saveCategories {
+  background: var(--gradient-primary);
+  color: var(--text-light);
+  border: none;
+}
+
+#saveCategories:hover {
+  background: linear-gradient(135deg, #1E40AF, #60A5FA);
+  transform: translateY(-3px);
+}
+
+#categoryModal .modal-body .form-check {
+  display: flex;
+  align-items: center;
+  padding: 0.25rem 0;
+}
+
+#categoryModal .modal-body .form-check-input {
+  margin-top: 0;
+  margin-right: 0.5rem;
+  width: 1em;
+  height: 1em;
+}
+
+#categoryModal .modal-body .form-check-label {
+  min-width: 120px;
+  text-align: left;
+  padding-left: 0.5rem;
+  margin-bottom: 0;
+}
+
+#categoryModal .modal-body {
+  padding: 1rem;
+}
+
+/* Ensure backdrop is removed when modal hides */
+.modal-backdrop {
+  transition: opacity 0.3s ease-out;
+}
+
+.modal-backdrop.fade {
+  opacity: 0.5;
+}
+
+.modal-backdrop.fade.show {
+  opacity: 0.5;
+}
+
+.modal-backdrop.fade.hide {
+  opacity: 0 !important;
+}
+
+/* Remove problematic float and margin settings */
+.form-check .form-check-input {
+  float: none;
+  margin-left: 0;
 }
