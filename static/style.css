@@ -1321,7 +1321,7 @@ footer a:hover {
 
 /* Ensure backdrop is removed when modal hides */
 .modal-backdrop {
-  transition: opacity 0.3s ease-out;
+  background-color: rgba(0, 0, 0, 0.2); /* Reduced opacity to 20% */
 }
 
 .modal-backdrop.fade {
@@ -1329,7 +1329,7 @@ footer a:hover {
 }
 
 .modal-backdrop.fade.show {
-  opacity: 0.5;
+  opacity: 1; /* Ensure it fully applies the reduced opacity */
 }
 
 .modal-backdrop.fade.hide {
