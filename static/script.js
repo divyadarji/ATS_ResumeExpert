@@ -482,59 +482,45 @@ const updateFileDisplay = () => {
     const files = fileInput.files;
     fileCount.textContent = `${files.length} file${files.length !== 1 ? 's' : ''} selected`;
     viewFilesButton.style.display = files.length > 0 ? 'inline-block' : 'none';
-
-    if (files.length > 0) {
-        let fileListHTML = '';
-        for (let file of files) {
-            if (SUPPORTED_EXTENSIONS.some(ext => file.name.toLowerCase().endsWith(ext))) {
-                fileListHTML += `<p>${file.name} (${(file.size / 1024).toFixed(2)} KB)</p>`;
-            }
-        }
-        document.getElementById('file-list').innerHTML = fileListHTML;
-        document.getElementById('file-list').style.display = 'block';
-    } else {
-        document.getElementById('file-list').style.display = 'none';
-    }
 };
 
 viewFilesButton.onclick = () => {
-    modalFileList.innerHTML = '';
-    const files = fileInput.files;
-    for (let file of files) {
-        if (SUPPORTED_EXTENSIONS.some(ext => file.name.toLowerCase().endsWith(ext))) {
-            const row = document.createElement('tr');
-            row.innerHTML = `
-                <td>${file.name}</td>
-                <td>${(file.size / 1024).toFixed(2)} KB</td>
-                <td><button class="btn btn-danger btn-sm remove-file" data-index="${Array.from(files).indexOf(file)}">Remove</button></td>
-            `;
-            modalFileList.appendChild(row);
+    const updateModalFileList = () => {
+        if (!modalFileList) {
+            console.error('modalFileList element not found');
+            return;
         }
-    }
-
-    document.querySelectorAll('.remove-file').forEach(button => {
-        button.onclick = (e) => {
-            const index = parseInt(e.target.getAttribute('data-index'));
-            const dataTransfer = new DataTransfer();
-            Array.from(fileInput.files).forEach((file, i) => {
-                if (i !== index) dataTransfer.items.add(file);
-            });
-            fileInput.files = dataTransfer.files;
-            updateFileDisplay();
-            modalFileList.innerHTML = '';
-            for (let file of fileInput.files) {
-                if (SUPPORTED_EXTENSIONS.some(ext => file.name.toLowerCase().endsWith(ext))) {
-                    const row = document.createElement('tr');
-                    row.innerHTML = `
-                        <td>${file.name}</td>
-                        <td>${(file.size / 1024).toFixed(2)} KB</td>
-                        <td><button class="btn btn-danger btn-sm remove-file" data-index="${Array.from(fileInput.files).indexOf(file)}">Remove</button></td>
-                    `;
-                    modalFileList.appendChild(row);
-                }
+        modalFileList.innerHTML = '';
+        const files = fileInput.files;
+        Array.from(files).forEach((file, index) => {
+            if (SUPPORTED_EXTENSIONS.some(ext => file.name.toLowerCase().endsWith(ext))) {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${file.name}</td>
+                    <td>${(file.size / 1024).toFixed(2)} KB</td>
+                    <td><button class="btn btn-danger btn-sm remove-file" data-index="${index}">Remove</button></td>
+                `;
+                modalFileList.appendChild(row);
             }
-        };
-    });
+        });
+
+        // Attach event listeners for remove buttons
+        document.querySelectorAll('.remove-file').forEach(button => {
+            button.onclick = (e) => {
+                const index = parseInt(e.target.getAttribute('data-index'));
+                const dataTransfer = new DataTransfer();
+                Array.from(fileInput.files).forEach((file, i) => {
+                    if (i !== index) dataTransfer.items.add(file);
+                });
+                fileInput.files = dataTransfer.files;
+                updateFileDisplay(); // Update file count
+                updateModalFileList(); // Update modal
+                modalFileList.focus(); // Maintain accessibility
+            };
+        });
+    };
+
+    updateModalFileList(); // Initial population
 
     const fileModal = new bootstrap.Modal(document.getElementById('fileModal'), { centered: true });
     fileModal.show();
