@@ -797,10 +797,14 @@ footer a:hover {
 }
 
 /* Modal Adjustments */
-.modal-dialog {
-  transform: translate(0, 0) !important;
+#fileModal .modal-dialog {
+  margin: auto !important;
+  transform: translate(-50%, -50%) !important;
+  position: absolute;
+  width: auto;
+  top: 50%;
+  left: 50%;
 }
-
 /* Animations */
 @keyframes fadeIn {
   from { opacity: 0; }
