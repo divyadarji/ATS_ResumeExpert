@@ -464,7 +464,7 @@ textarea.form-control {
   box-shadow: 
     0 8px 32px rgba(30, 58, 138, 0.1),
     0 0 0 1px rgba(255, 255, 255, 0.3);
-  backdrop-filter: blur(12px);
+  /* backdrop-filter: blur(12px); */
   animation: fadeIn 0.4s ease-out;
   position: relative;
   overflow: hidden;
@@ -1057,11 +1057,7 @@ footer a:hover {
     padding: 4px 8px;
     margin: 0.15rem;
   }
-  
-  #categoryCheckboxes .row {
-    row-cols-2;
-  }
-  
+
   #visualization .row {
     flex-direction: column;
     gap: var(--spacing-sm);
