@@ -48,11 +48,12 @@ body {
   height: 60px;
   position: sticky;
   top: 0;
-  z-index: 1000;
+  z-index: 2000;
   transition: all var(--transition-speed);
   display: flex;
   align-items: center;
   will-change: background;
+  transform: translateY(0);
 }
 
 .navbar:hover {
@@ -150,19 +151,22 @@ body {
 .hero-section {
   min-height: 50vh;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
   background: var(--gradient-primary);
-  clip-path: polygon(0 0, 100% 0, 100% 75%, 0 90%);
   padding: var(--spacing-lg) 0;
   position: relative;
   animation: slideDown 1.5s ease-out;
+  overflow: hidden;
 }
 
 .hero-content {
   max-width: 800px;
   margin: 0 auto;
   padding: 0 1rem;
+  z-index: 1001;
+  padding-bottom: 50px;
 }
 
 .hero-section h1 {
@@ -190,6 +194,7 @@ body {
 }
 
 .hero-section .btn {
+  z-index: 1002;
   padding: 10px 25px;
   font-size: 1rem;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
@@ -199,6 +204,7 @@ body {
   transition: all var(--transition-speed);
   animation: fadeInUp 1s ease-out 0.5s backwards;
   will-change: transform, box-shadow;
+  margin-bottom: 40px;
 }
 
 .pulse-animation {
@@ -209,6 +215,77 @@ body {
   transform: translateY(-4px) scale(1.04);
   box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
   background: #E5E7EB;
+}
+
+/* Wave Container */
+.wave-container {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 100vh;
+  overflow: hidden;
+  z-index: 1000;
+}
+
+.wave-container .air {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 100px;
+  background: url(https://1.bp.blogspot.com/-xQUc-TovqDk/XdxogmMqIRI/AAAAAAAACvI/AizpnE509UMGBcTiLJ58BC6iViPYGYQfQCLcBGAsYHQ/s1600/wave.png);
+  background-size: 1000px 100px;
+}
+
+.wave-container .air.air1 {
+  animation: wave 30s linear infinite;
+  z-index: 1000;
+  opacity: 1;
+  animation-delay: 0s;
+  bottom: 0;
+}
+
+.wave-container .air.air2 {
+  animation: wave2 15s linear infinite;
+  z-index: 999;
+  opacity: 0.5;
+  animation-delay: -5s;
+  bottom: 10px;
+}
+
+.wave-container .air.air3 {
+  animation: wave 30s linear infinite;
+  z-index: 998;
+  opacity: 0.2;
+  animation-delay: -2s;
+  bottom: 15px;
+}
+
+.wave-container .air.air4 {
+  animation: wave2 5s linear infinite;
+  z-index: 997;
+  opacity: 0.7;
+  animation-delay: -5s;
+  bottom: 20px;
+}
+
+@keyframes wave {
+  0% {
+    background-position-x: 0px; 
+  }
+  100% {
+    background-position-x: 1000px; 
+  }
+}
+
+@keyframes wave2 {
+  0% {
+    background-position-x: 0px; 
+  }
+  100% {
+    background-position-x: -1000px; 
+  }
 }
 
 /* Main Content */
@@ -263,21 +340,6 @@ main h3 {
   color: var(--primary-color);
   margin-bottom: var(--spacing-sm);
   position: relative;
-}
-
-main h2::after, main h3::after {
-  content: '';
-  position: absolute;
-  width: 40px;
-  height: 2px;
-  background: var(--accent-color);
-  bottom: -6px;
-  left: 0;
-  transition: width var(--transition-speed);
-}
-
-main .card:hover h2::after, main .card:hover h3::after {
-  width: 50px;
 }
 
 main h4 {
@@ -748,6 +810,11 @@ footer a:hover {
   color: var(--text-primary);
 }
 
+/* Modal Adjustments */
+.modal-dialog {
+  transform: translate(0, 0) !important;
+}
+
 /* Animations */
 @keyframes fadeIn {
   from { opacity: 0; }
@@ -889,7 +956,6 @@ footer a:hover {
   .hero-section {
     min-height: 40vh;
     padding: var(--spacing-base) 0;
-    clip-path: none;
   }
   
   .hero-section h1 {

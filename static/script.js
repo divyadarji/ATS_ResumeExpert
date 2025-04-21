@@ -2,15 +2,27 @@ document.addEventListener('DOMContentLoaded', () => {
     const navLinks = document.querySelectorAll('.nav-link');
     const navbarCollapse = document.getElementById('navbarNav');
     const navbarToggler = document.querySelector('.navbar-toggler');
+    const navbar = document.querySelector('.navbar');
+
+    let lastScroll = 0;
+    window.addEventListener('scroll', () => {
+        const currentScroll = window.pageYOffset;
+        if (currentScroll > lastScroll && currentScroll > 60) {
+            navbar.style.transform = 'translateY(-100%)';
+        } else {
+            navbar.style.transform = 'translateY(0)';
+        }
+        lastScroll = currentScroll;
+    });
 
     // Prevent rapid touch events on mobile
     let isToggling = false;
     navbarToggler.addEventListener('touchstart', (event) => {
-        event.preventDefault(); // Prevent default touch behavior
+        event.preventDefault();
         if (!isToggling && window.innerWidth <= 991) {
             isToggling = true;
-            navbarToggler.click(); // Trigger the native Bootstrap toggle
-            setTimeout(() => { isToggling = false; }, 300); // Reset after 300ms
+            navbarToggler.click();
+            setTimeout(() => { isToggling = false; }, 300);
         }
     });
 
@@ -21,7 +33,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 isToggling = true;
                 const bsCollapse = new bootstrap.Collapse(navbarCollapse, { toggle: false });
                 bsCollapse.hide();
-                setTimeout(() => { isToggling = false; }, 300); // Prevent rapid toggles
+                setTimeout(() => { isToggling = false; }, 300);
             }
         });
     });
@@ -524,7 +536,7 @@ viewFilesButton.onclick = () => {
         };
     });
 
-    const fileModal = new bootstrap.Modal(document.getElementById('fileModal'));
+    const fileModal = new bootstrap.Modal(document.getElementById('fileModal'), { centered: true });
     fileModal.show();
 };
 
