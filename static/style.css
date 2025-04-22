@@ -2,8 +2,8 @@
 :root {
   --primary-color: #1E3A8A;
   --secondary-color: #6B46C1;
-  --accent-color: #2DD4BF;
-  --success-color: #34D399;
+  --accent-color: #9CA3AF; /* Changed to gray-400 for non-button elements to avoid conflicts */
+  --success-color: #374151; /* Changed to gray-700 for buttons */
   --warning-color: #FBBF24;
   --danger-color: #F87171;
   --light-bg: #F9FAFB;
@@ -12,7 +12,7 @@
   --text-secondary: #4B5563;
   --text-light: #F9FAFB;
   --gradient-primary: linear-gradient(135deg, #1E3A8A, #3B82F6);
-  --gradient-secondary: linear-gradient(135deg, #2DD4BF, #6EE7B7);
+  --gradient-secondary: linear-gradient(135deg, #374151, #1F2937); /* Updated to gray-700 to gray-800 */
   --card-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
   --transition-speed: 0.25s;
   --spacing-base: 1.2rem;
@@ -344,7 +344,7 @@ main h3 {
 
 main h4 {
   font-size: 1rem;
-  color: var(--secondary-color);
+  color: var(--primary-color);
   margin-bottom: var(--spacing-sm);
 }
 
@@ -374,7 +374,7 @@ main p {
 
 .form-control:focus {
   border-color: var(--accent-color);
-  box-shadow: 0 0 0 3px rgba(45, 212, 191, 0.15);
+  box-shadow: 0 0 0 3px rgba(156, 163, 175, 0.15); /* Updated to use gray-400 */
 }
 
 textarea.form-control {
@@ -408,8 +408,6 @@ textarea.form-control {
   animation: none;
 }
 
-
-
 /* Buttons */
 .btn {
   border-radius: 20px;
@@ -418,7 +416,7 @@ textarea.form-control {
   text-transform: uppercase;
   transition: all var(--transition-speed);
   font-size: 0.9rem;
-  margin: 0.3rem;
+  /* margin: 0.3rem; */
   animation: fadeIn 1s ease-out;
   will-change: transform, box-shadow;
   position: relative;
@@ -441,14 +439,17 @@ textarea.form-control {
 
 .btn-primary { background: var(--gradient-primary); border: none; color: var(--text-light); }
 .btn-primary:hover { background: linear-gradient(135deg, #1E40AF, #60A5FA); transform: translateY(-3px); }
-.btn-secondary { background: var(--gradient-secondary); border: none; color: var(--text-light); }
-.btn-secondary:hover { background: linear-gradient(135deg, #14B8A6, #6EE7B7); transform: translateY(-3px); }
-.btn-success { background: var(--success-color); border: none; }
-.btn-success:hover { background: #10B981; transform: translateY(-3px); }
+.btn-secondary { background: #374151; border: none; color: #FFFFFF; } /* Updated to gray-700, white text */
+.btn-secondary:hover { background: #1F2937; transform: translateY(-3px); } /* Updated to gray-800 */
+.btn-success { background: #374151; border: none; color: #FFFFFF; } /* Updated to gray-700, white text */
+.btn-success:hover { background: #1F2937; transform: translateY(-3px); } /* Updated to gray-800 */
 .btn-warning { background: var(--warning-color); border: none; color: var(--text-light); }
 .btn-warning:hover { background: #F59E0B; transform: translateY(-3px); }
-.btn-info { background: var(--accent-color); border: none; color: var(--text-light); }
-.btn-info:hover { background: #2DD4BF; transform: translateY(-3px); }
+.btn-info { background: #374151; border: none; color: #FFFFFF; } /* Updated to gray-700, white text */
+.btn-info:hover { background: #1F2937; transform: translateY(-3px); color: #FFFFFF; } /* Updated to gray-800 */
+.btn-info:active,
+.btn-info:focus,
+.btn-info:focus:active { background: #374151; color: #FFFFFF; border: none; box-shadow: none; outline: none; } /* Added to prevent light cyan on click and maintain initial state */
 
 /* Loader with Progress */
 #loader {
@@ -483,7 +484,7 @@ textarea.form-control {
   background: conic-gradient(
     from 0deg,
     transparent 0%,
-    rgba(45, 212, 191, 0.1) 30%,
+    rgba(156, 163, 175, 0.1) 30%, /* Updated to gray-400 */
     rgba(30, 58, 138, 0.1) 50%,
     transparent 70%
   );
@@ -518,7 +519,7 @@ textarea.form-control {
   width: 100%;
   height: 100%;
   transform: rotate(-90deg);
-  filter: drop-shadow(0 0 12px rgba(45, 212, 191, 0.2));
+  filter: drop-shadow(0 0 12px rgba(156, 163, 175, 0.2)); /* Updated to gray-400 */
 }
 
 #loader .progress-ring-circle {
@@ -552,7 +553,7 @@ textarea.form-control {
 
 .progress-icon {
   font-size: 1.8rem;
-  color: var(--accent-color);
+  color: var(--accent-color); /* Using gray-400 for icons */
   animation: float 3s ease-in-out infinite;
 }
 
@@ -580,7 +581,7 @@ textarea.form-control {
 }
 
 #timeRemaining i {
-  color: var(--accent-color);
+  color: var(--accent-color); /* Using gray-400 for icon */
 }
 
 /* Results */
@@ -664,7 +665,7 @@ textarea.form-control {
 
 .form-select:focus {
   border-color: var(--accent-color);
-  box-shadow: 0 0 0 3px rgba(45, 212, 191, 0.15);
+  box-shadow: 0 0 0 3px rgba(156, 163, 175, 0.15); /* Updated to gray-400 */
 }
 
 /* Visualization */
