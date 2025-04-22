@@ -37,29 +37,127 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     });
+
+    // Initialize form elements
+    const initialForm = document.getElementById('resumeForm');
+    const fullForm = document.getElementById('resumeFormFull');
+    const initialSection = document.getElementById('initial-section');
+    const fullInterface = document.getElementById('full-interface');
+
+    // Sync form inputs between initial and full forms
+    const syncForms = (sourceForm, targetForm) => {
+        const sourceJobRole = sourceForm.querySelector('#jobRole').value;
+        const sourceJobDescription = sourceForm.querySelector('#jobDescription').value;
+        const sourceResumes = sourceForm.querySelector('#resumes').files;
+
+        targetForm.querySelector('#jobRole').value = sourceJobRole;
+        targetForm.querySelector('#jobDescription').value = sourceJobDescription;
+
+        // Update file input and UI for target form
+        const targetFileInput = targetForm.querySelector('#resumes');
+        const targetFileCount = targetForm.querySelector('#file-count');
+        const targetViewFilesButton = targetForm.querySelector('#viewFilesButton');
+
+        // Create a new DataTransfer to assign files
+        const dataTransfer = new DataTransfer();
+        Array.from(sourceResumes).forEach(file => dataTransfer.items.add(file));
+        targetFileInput.files = dataTransfer.files;
+
+        // Update file display for target form
+        updateFileDisplay(targetFileInput, targetFileCount, targetViewFilesButton);
+    };
+
+    // Attach event listeners to both forms
+    [initialForm, fullForm].forEach(form => {
+        const summarizeButton = form.querySelector('#summarizeButton');
+        const matchButton = form.querySelector('#matchButton');
+        const generateJDButton = form.querySelector('#generateJD');
+        const dropzone = form.querySelector('#dropzone');
+        const fileInput = form.querySelector('#resumes');
+        const fileCount = form.querySelector('#file-count');
+        const viewFilesButton = form.querySelector('#viewFilesButton');
+
+        summarizeButton.onclick = () => {
+            // Sync forms before submission
+            syncForms(form, form === initialForm ? fullForm : initialForm);
+            submitForm('summarize', form);
+        };
+
+        matchButton.onclick = () => {
+            const jobDescription = form.querySelector('#jobDescription').value.trim();
+            if (!jobDescription) {
+                alert('Please provide a job description to perform percentage match.');
+                return;
+            }
+            // Sync forms before submission
+            syncForms(form, form === initialForm ? fullForm : initialForm);
+            submitForm('match', form);
+        };
+
+        generateJDButton.onclick = async () => {
+            const jobRole = form.querySelector('#jobRole').value.trim();
+            if (!jobRole) {
+                alert("Please enter a job role.");
+                return;
+            }
+
+            try {
+                form.querySelector('#jobDescription').placeholder = "Generating JD...";
+                const response = await axios.post('/generate_jd',
+                    { job_role: jobRole },
+                    { headers: { 'Content-Type': 'application/json' } }
+                );
+
+                if (response.data.job_description) {
+                    form.querySelector('#jobDescription').value = response.data.job_description;
+                    // Sync to the other form
+                    syncForms(form, form === initialForm ? fullForm : initialForm);
+                } else {
+                    alert("Failed to generate JD. Try again.");
+                }
+            } catch (error) {
+                alert("Error fetching JD: Check the console for details.");
+            } finally {
+                form.querySelector('#jobDescription').placeholder = "Enter the job description here...";
+            }
+        };
+
+        dropzone.addEventListener('click', () => fileInput.click());
+
+        fileInput.addEventListener('change', () => {
+            updateFileDisplay(fileInput, fileCount, viewFilesButton);
+            // Sync to the other form
+            syncForms(form, form === initialForm ? fullForm : initialForm);
+        });
+
+        dropzone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropzone.classList.add('dragover');
+        });
+
+        dropzone.addEventListener('dragleave', () => {
+            dropzone.classList.remove('dragover');
+        });
+
+        dropzone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropzone.classList.remove('dragover');
+            const files = e.dataTransfer.files;
+            fileInput.files = files;
+            updateFileDisplay(fileInput, fileCount, viewFilesButton);
+            // Sync to the other form
+            syncForms(form, form === initialForm ? fullForm : initialForm);
+        });
+
+        viewFilesButton.onclick = () => {
+            updateModalFileList(fileInput);
+            const fileModal = new bootstrap.Modal(document.getElementById('fileModal'), { centered: true });
+            fileModal.show();
+        };
+    });
 });
 
 const axios = window.axios || (function() { throw new Error('Axios is not loaded. Please include axios.js'); })();
-
-const summarizeButton = document.getElementById('summarizeButton');
-const matchButton = document.getElementById('matchButton');
-const loader = document.getElementById('loader');
-const timeRemainingElement = document.getElementById('timeRemaining');
-const resultsDiv = document.getElementById('results');
-const downloadCsvButton = document.getElementById('downloadCsvButton');
-const downloadFilteredCsvButton = document.getElementById('downloadFilteredCsvButton');
-const shortlistButton = document.getElementById('shortlistButton');
-const categoryFilters = document.getElementById('categoryFilters');
-const percentageThresholdSelect = document.getElementById('percentageThreshold');
-const dropzone = document.getElementById('dropzone');
-const fileInput = document.getElementById('resumes');
-const fileCount = document.getElementById('file-count');
-const viewFilesButton = document.getElementById('viewFilesButton');
-const modalFileList = document.getElementById('modalFileList');
-const visualizationDiv = document.getElementById('visualization');
-const selectedCategoriesDisplay = document.getElementById('selectedCategories');
-const categoryModalButton = document.getElementById('categoryModalButton');
-const saveCategoriesButton = document.getElementById('saveCategories');
 
 const SUPPORTED_EXTENSIONS = ['.pdf', '.docx', '.txt', '.png', '.jpg', '.jpeg'];
 
@@ -69,23 +167,23 @@ let categorizedResults = {};
 let currentAction = '';
 let currentDisplayCategory = '';
 let countdownInterval;
-let currentCategory = '';
 let pieChart, barChart;
 
-summarizeButton.onclick = () => submitForm('summarize');
-matchButton.onclick = () => {
-    const jobDescription = document.getElementById('jobDescription').value.trim();
-    if (!jobDescription) {
-        alert('Please provide a job description to perform percentage match.');
-        return;
-    }
-    submitForm('match');
-};
-
-const submitForm = async (action) => {
-    const formData = new FormData(document.getElementById('resumeForm'));
+const submitForm = async (action, form) => {
+    const formData = new FormData(form);
     formData.append('action', action);
     currentAction = action;
+
+    const loader = document.getElementById('loader');
+    const timeRemainingElement = document.getElementById('timeRemaining');
+    const resultsDiv = document.getElementById('results');
+    const downloadCsvButton = document.getElementById('downloadCsvButton');
+    const downloadFilteredCsvButton = document.getElementById('downloadFilteredCsvButton');
+    const shortlistButton = document.getElementById('shortlistButton');
+    const categoryFilters = document.getElementById('categoryFilters');
+    const visualizationDiv = document.getElementById('visualization');
+    const initialSection = document.getElementById('initial-section');
+    const fullInterface = document.getElementById('full-interface');
 
     loader.style.display = 'block';
     downloadCsvButton.style.display = 'none';
@@ -104,6 +202,10 @@ const submitForm = async (action) => {
         const response = await axios.post('/process_resumes', formData, {
             headers: { 'Content-Type': 'multipart/form-data' },
         });
+
+        // Show full interface
+        initialSection.style.display = 'none';
+        fullInterface.style.display = 'block';
 
         const data = response.data;
         const results = data.results || [];
@@ -136,8 +238,10 @@ const submitForm = async (action) => {
     }
 };
 
+// ... (rest of the functions like updateFileDisplay, updateModalFileList, etc., remain unchanged)
 const startCountdown = (timeInSeconds) => {
     let timeLeft = timeInSeconds;
+    const timeRemainingElement = document.getElementById('timeRemaining');
     countdownInterval = setInterval(() => {
         let minutes = Math.floor(timeLeft / 60);
         let seconds = timeLeft % 60;
@@ -189,6 +293,8 @@ const formatLacking = (lackingText) => {
 };
 
 const displayResults = (results, action, displayCategory) => {
+    const percentageThresholdSelect = document.getElementById('percentageThreshold');
+    const resultsDiv = document.getElementById('results');
     const percentageThreshold = parseFloat(percentageThresholdSelect.value) || 0;
     let filteredResults = results;
 
@@ -281,38 +387,14 @@ const setupCategoryFilters = () => {
 };
 
 const setupPercentageFilter = () => {
+    const percentageThresholdSelect = document.getElementById('percentageThreshold');
     percentageThresholdSelect.onchange = () => {
         displayResults(currentAction === 'summarize' ? summarizedData : matchData, currentAction, currentDisplayCategory);
         displayCharts();
     };
 };
 
-document.getElementById('generateJD').onclick = async () => {
-    const jobRole = document.getElementById('jobRole').value.trim();
-    if (!jobRole) {
-        alert("Please enter a job role.");
-        return;
-    }
-
-    try {
-        document.getElementById('jobDescription').placeholder = "Generating JD...";
-        const response = await axios.post('/generate_jd',
-            { job_role: jobRole },
-            { headers: { 'Content-Type': 'application/json' } }
-        );
-
-        if (response.data.job_description) {
-            document.getElementById('jobDescription').value = response.data.job_description;
-        } else {
-            alert("Failed to generate JD. Try again.");
-        }
-    } catch (error) {
-        alert("Error fetching JD: Check the console for details.");
-    } finally {
-        document.getElementById('jobDescription').placeholder = "Enter the job description here...";
-    }
-};
-
+const downloadCsvButton = document.getElementById('downloadCsvButton');
 downloadCsvButton.onclick = async () => {
     const combinedData = [];
     summarizedData.forEach((summarized) => {
@@ -350,6 +432,7 @@ downloadCsvButton.onclick = async () => {
     }
 };
 
+const downloadFilteredCsvButton = document.getElementById('downloadFilteredCsvButton');
 downloadFilteredCsvButton.onclick = async () => {
     const percentageThreshold = parseFloat(document.getElementById('downloadPercentageThreshold').value) || 0;
     const selectedCategories = Array.from(document.querySelectorAll('.category-checkbox:checked'))
@@ -403,6 +486,7 @@ downloadFilteredCsvButton.onclick = async () => {
     }
 };
 
+const shortlistButton = document.getElementById('shortlistButton');
 shortlistButton.onclick = async () => {
     const percentageThreshold = parseFloat(document.getElementById('downloadPercentageThreshold').value) || 0;
     const selectedCategories = Array.from(document.querySelectorAll('.category-checkbox:checked'))
@@ -431,8 +515,6 @@ shortlistButton.onclick = async () => {
         return percentage >= percentageThreshold && categoryMatch;
     });
 
-    console.log('Filtered Resumes for Shortlisting:', filteredResumes);
-
     try {
         const response = await axios.post('/shortlist_resumes', {
             summarized_data: filteredResumes,
@@ -453,91 +535,60 @@ shortlistButton.onclick = async () => {
     }
 };
 
-fileInput.setAttribute('accept', SUPPORTED_EXTENSIONS.join(','));
-
-dropzone.addEventListener('click', () => fileInput.click());
-
-fileInput.addEventListener('change', () => {
-    updateFileDisplay();
-});
-
-dropzone.addEventListener('dragover', (e) => {
-    e.preventDefault();
-    dropzone.classList.add('dragover');
-});
-
-dropzone.addEventListener('dragleave', () => {
-    dropzone.classList.remove('dragover');
-});
-
-dropzone.addEventListener('drop', (e) => {
-    e.preventDefault();
-    dropzone.classList.remove('dragover');
-    const files = e.dataTransfer.files;
-    fileInput.files = files;
-    updateFileDisplay();
-});
-
-const updateFileDisplay = () => {
+const updateFileDisplay = (fileInput, fileCount, viewFilesButton) => {
     const files = fileInput.files;
     fileCount.textContent = `${files.length} file${files.length !== 1 ? 's' : ''} selected`;
     viewFilesButton.style.display = files.length > 0 ? 'inline-block' : 'none';
 };
 
-viewFilesButton.onclick = () => {
-    const updateModalFileList = () => {
-        if (!modalFileList) {
-            console.error('modalFileList element not found');
-            return;
+const updateModalFileList = (fileInput) => {
+    const modalFileList = document.getElementById('modalFileList');
+    if (!modalFileList) {
+        console.error('modalFileList element not found');
+        return;
+    }
+    modalFileList.innerHTML = '';
+    const files = fileInput.files;
+    Array.from(files).forEach((file, index) => {
+        if (SUPPORTED_EXTENSIONS.some(ext => file.name.toLowerCase().endsWith(ext))) {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${file.name}</td>
+                <td>${(file.size / 1024).toFixed(2)} KB</td>
+                <td><button class="btn btn-danger btn-sm remove-file" data-index="${index}">Remove</button></td>
+            `;
+            modalFileList.appendChild(row);
         }
-        modalFileList.innerHTML = '';
-        const files = fileInput.files;
-        Array.from(files).forEach((file, index) => {
-            if (SUPPORTED_EXTENSIONS.some(ext => file.name.toLowerCase().endsWith(ext))) {
-                const row = document.createElement('tr');
-                row.innerHTML = `
-                    <td>${file.name}</td>
-                    <td>${(file.size / 1024).toFixed(2)} KB</td>
-                    <td><button class="btn btn-danger btn-sm remove-file" data-index="${index}">Remove</button></td>
-                `;
-                modalFileList.appendChild(row);
-            }
-        });
+    });
 
-        // Attach event listeners for remove buttons
-        document.querySelectorAll('.remove-file').forEach(button => {
-            button.onclick = (e) => {
-                const index = parseInt(e.target.getAttribute('data-index'));
-                const dataTransfer = new DataTransfer();
-                Array.from(fileInput.files).forEach((file, i) => {
-                    if (i !== index) dataTransfer.items.add(file);
-                });
-                fileInput.files = dataTransfer.files;
-                updateFileDisplay(); // Update file count
-                updateModalFileList(); // Update modal
-                modalFileList.focus(); // Maintain accessibility
-            };
-        });
-    };
-
-    updateModalFileList(); // Initial population
-
-    const fileModal = new bootstrap.Modal(document.getElementById('fileModal'), { centered: true });
-    fileModal.show();
+    document.querySelectorAll('.remove-file').forEach(button => {
+        button.onclick = (e) => {
+            const index = parseInt(e.target.getAttribute('data-index'));
+            const dataTransfer = new DataTransfer();
+            Array.from(fileInput.files).forEach((file, i) => {
+                if (i !== index) dataTransfer.items.add(file);
+            });
+            fileInput.files = dataTransfer.files;
+            updateFileDisplay(fileInput, document.getElementById('file-count'), document.getElementById('viewFilesButton'));
+            updateModalFileList(fileInput);
+            modalFileList.focus();
+        };
+    });
 };
 
 const updateSelectedCategoriesDisplay = () => {
+    const selectedCategoriesDisplay = document.getElementById('selectedCategories');
     const selectedCategories = Array.from(document.querySelectorAll('.category-checkbox:checked'))
         .map(checkbox => checkbox.value);
     selectedCategoriesDisplay.textContent = `Selected categories: ${selectedCategories.length > 0 ? selectedCategories.join(', ') : 'None'}`;
 };
 
-categoryModalButton.onclick = () => {
+document.getElementById('categoryModalButton').onclick = () => {
     const fileModal = bootstrap.Modal.getInstance(document.getElementById('fileModal'));
     if (fileModal) fileModal.hide();
 };
 
-saveCategoriesButton.onclick = () => {
+document.getElementById('saveCategories').onclick = () => {
     updateSelectedCategoriesDisplay();
 };
 
@@ -546,6 +597,8 @@ document.querySelectorAll('.category-checkbox').forEach(checkbox => {
 });
 
 const displayCharts = () => {
+    const percentageThresholdSelect = document.getElementById('percentageThreshold');
+    const visualizationDiv = document.getElementById('visualization');
     const percentageThreshold = parseFloat(percentageThresholdSelect.value) || 0;
     let filteredResults = currentAction === 'summarize' ? summarizedData : matchData;
 

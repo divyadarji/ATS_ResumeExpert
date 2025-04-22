@@ -63,9 +63,9 @@
     <!-- Main Content -->
     <main class="py-2">
         <div class="container-fluid">
-            <div class="row g-4 align-items-stretch">
-                <!-- Upload Section -->
-                <div class="col-lg-5">
+            <!-- Initial Analyze Resumes Section -->
+            <div id="initial-section" class="row justify-content-center">
+                <div class="col-lg-6 col-md-8 col-sm-10">
                     <section id="upload-section" class="card h-100">
                         <div class="card-body">
                             <h2><i class="fas fa-upload me-2"></i>Analyze Resumes</h2>
@@ -76,7 +76,7 @@
                                         <input type="text" class="form-control" id="jobRole"
                                             placeholder="e.g., Node.js Developer with 2 years of exp">
                                         <button type="button" class="btn btn-info" id="generateJD">
-                                            <i class="fas fa-magic me-1"></i>Generate JD
+                                            <i class="fas fa-magic me-1"></i>AI Generated JD
                                         </button>
                                     </div>
                                 </div>
@@ -103,25 +103,145 @@
                                     <button type="button" class="btn btn-primary me-2" id="summarizeButton">
                                         <i class="fas fa-list-alt me-1"></i>Summarize
                                     </button>
-                                    <button type="button" class="btn btn-secondary" id="matchButton">
+                                    <button type="button" class="btn btn-primary" id="matchButton">
                                         <i class="fas fa-percentage me-1"></i>Match
                                     </button>
                                 </div>
+                            </form>
+                        </div>
+                    </section>
+                </div>
+            </div>
 
-                                <div class="mt-4 p-3 bg-white rounded shadow-sm">
-                                    <h4><i class="fas fa-download me-2"></i>Categories & Percentage to Download</h4>
-                                    <div class="row g-2 mb-3">
-                                        <div class="col-md-6">
-                                            <h5 class="mb-2">Select Categories</h5>
-                                            <button type="button" class="btn btn-info w-100" id="categoryModalButton" data-bs-toggle="modal" data-bs-target="#categoryModal">
-                                                <i class="fas fa-check-square me-1"></i>Categories
+            <!-- Full Interface (Hidden Initially) -->
+            <div id="full-interface" style="display: none;">
+                <div class="row g-4 align-items-stretch">
+                    <!-- Upload Section -->
+                    <div class="col-lg-5">
+                        <section id="upload-section-full" class="card h-100">
+                            <div class="card-body">
+                                <h2><i class="fas fa-upload me-2"></i>Analyze Resumes</h2>
+                                <form id="resumeFormFull" enctype="multipart/form-data">
+                                    <div class="mb-3">
+                                        <label for="jobRole" class="form-label">Job Role</label>
+                                        <div class="input-group">
+                                            <input type="text" class="form-control" id="jobRole"
+                                                placeholder="e.g., Node.js Developer with 2 years of exp">
+                                            <button type="button" class="btn btn-info" id="generateJD">
+                                                <i class="fas fa-magic me-1"></i>Generate JD
                                             </button>
-                                            <small class="text-muted">Click to select multiple categories.</small>
-                                            <p id="selectedCategories" class="mt-2" style="font-size: 0.85rem; color: var(--text-secondary);">Selected categories: None</p>
                                         </div>
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label for="jobDescription" class="form-label">Job Description</label>
+                                        <textarea class="form-control" id="jobDescription" name="job_description" rows="3"
+                                            placeholder="Enter or generate a job description..."></textarea>
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label class="form-label">Upload Resumes</label>
+                                        <div id="dropzone" class="dropzone">
+                                            <p id="dropzone-text">Drag & drop files (PDF, DOCX, TXT, PNG, JPG, JPEG)</p>
+                                            <input type="file" id="resumes" name="resumes" accept=".pdf,.docx,.txt,.png,.jpg,.jpeg" multiple style="display: none;">
+                                        </div>
+                                        <small id="file-count" class="text-muted d-block mt-2"></small>
+                                        <button type="button" class="btn btn-secondary mt-2" id="viewFilesButton" style="display: none;">
+                                            <i class="fas fa-eye me-1"></i>View Files
+                                        </button>
+                                    </div>
+
+                                    <div class="text-center mt-3">
+                                        <button type="button" class="btn btn-primary me-2" id="summarizeButton">
+                                            <i class="fas fa-list-alt me-1"></i>Summarize
+                                        </button>
+                                        <button type="button" class="btn btn-primary" id="matchButton">
+                                            <i class="fas fa-percentage me-1"></i>Match
+                                        </button>
+                                    </div>
+
+                                    <div class="mt-4 p-3 bg-white rounded shadow-sm">
+                                        <h4><i class="fas fa-download me-2"></i>Categories & Percentage to Download</h4>
+                                        <div class="row g-2 mb-3">
+                                            <div class="col-md-6">
+                                                <h5 class="mb-2">Select Categories</h5>
+                                                <button type="button" class="btn btn-info w-100" id="categoryModalButton" data-bs-toggle="modal" data-bs-target="#categoryModal">
+                                                    <i class="fas fa-check-square me-1"></i>Categories
+                                                </button>
+                                                <small class="text-muted">Click to select multiple categories.</small>
+                                                <p id="selectedCategories" class="mt-2" style="font-size: 0.85rem; color: var(--text-secondary);">Selected categories: None</p>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <h5 class="mb-2"><i class="fas fa-percentage me-1"></i>By Match Percentage</h5>
+                                                <select id="downloadPercentageThreshold" class="form-select">
+                                                    <option value="0">All Results</option>
+                                                    <option value="70">>= 70%</option>
+                                                    <option value="80">>= 80%</option>
+                                                    <option value="90">>= 90%</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                        <div class="col-12 text-center mt-3">
+                                            <button type="button" class="btn btn-success me-2" id="downloadCsvButton"
+                                                style="display: none;">
+                                                <i class="fas fa-file-csv me-1"></i>All CSV
+                                            </button>
+                                            <button type="button" class="btn btn-success me-2"
+                                                id="downloadFilteredCsvButton" style="display: none;">
+                                                <i class="fas fa-filter me-1"></i>Filtered CSV
+                                            </button>
+                                            <button type="button" class="btn btn-warning" id="shortlistButton"
+                                                style="display: none;">
+                                                <i class="fas fa-star me-1"></i>Shortlist
+                                            </button>
+                                        </div>
+                                    </div>
+                                </form>
+                            </div>
+                        </section>
+                    </div>
+
+                    <!-- Results & Insights Section -->
+                    <div class="col-lg-7">
+                        <section id="results-section" class="card h-100">
+                            <div class="card-body">
+                                <h2><i class="fas fa-chart-line me-2"></i>Results & Insights</h2>
+
+                                <!-- Category Filters -->
+                                <div id="categoryFilters" class="mt-3">
+                                    <h3><i class="fas fa-filter me-2"></i>Filter Results</h3>
+                                    <div class="row g-2">
+                                        <div class="col-12">
+                                            <h4 class="mb-2">By Category</h4>
+                                            <div class="btn-group d-flex flex-wrap gap-2" role="group">
+                                                <button type="button" class="btn category-btn active"
+                                                    data-category="">All</button>
+                                                <button type="button" class="btn category-btn"
+                                                    data-category="Frontend">Frontend</button>
+                                                <button type="button" class="btn category-btn"
+                                                    data-category="Backend">Backend</button>
+                                                <button type="button" class="btn category-btn"
+                                                    data-category="Full Stack">Full Stack</button>
+                                                <button type="button" class="btn category-btn"
+                                                    data-category="Mobile">Mobile</button>
+                                                <button type="button" class="btn category-btn"
+                                                    data-category="AIML">AI/ML</button>
+                                                <button type="button" class="btn category-btn"
+                                                    data-category="Testing">Testing</button>
+                                                <button type="button" class="btn category-btn"
+                                                    data-category="Cloud Engineer">Cloud</button>
+                                                <button type="button" class="btn category-btn"
+                                                    data-category="DevOps">DevOps</button>
+                                                <button type="button" class="btn category-btn"
+                                                    data-category="HR">HR</button>
+                                                <button type="button" class="btn category-btn"
+                                                    data-category="Uncategorized">Uncategorized</button>
+                                            </div>
+                                        </div>
+
                                         <div class="col-md-6">
-                                            <h5 class="mb-2"><i class="fas fa-percentage me-1"></i>By Match Percentage</h5>
-                                            <select id="downloadPercentageThreshold" class="form-select">
+                                            <h4 class="mb-2"><i class="fas fa-percentage me-1"></i>By Match Percentage</h4>
+                                            <select id="percentageThreshold" class="form-select">
                                                 <option value="0">All Results</option>
                                                 <option value="70">>= 70%</option>
                                                 <option value="80">>= 80%</option>
@@ -129,114 +249,47 @@
                                             </select>
                                         </div>
                                     </div>
-                                    <div class="col-12 text-center mt-3">
-                                        <button type="button" class="btn btn-success me-2" id="downloadCsvButton"
-                                            style="display: none;">
-                                            <i class="fas fa-file-csv me-1"></i>All CSV
-                                        </button>
-                                        <button type="button" class="btn btn-success me-2"
-                                            id="downloadFilteredCsvButton" style="display: none;">
-                                            <i class="fas fa-filter me-1"></i>Filtered CSV
-                                        </button>
-                                        <button type="button" class="btn btn-warning" id="shortlistButton"
-                                            style="display: none;">
-                                            <i class="fas fa-star me-1"></i>Shortlist
-                                        </button>
-                                    </div>
                                 </div>
-                            </form>
-                        </div>
-                    </section>
-                </div>
+                                <div id="loader" style="display: none;">
+                                    <div class="loader-header">
+                                        <i class="fas fa-spinner fa-spin"></i>
+                                        <h3>Processing Resumes</h3>
+                                    </div>
 
-                <!-- Results & Insights Section -->
-                <div class="col-lg-7">
-                    <section id="results-section" class="card h-100">
-                        <div class="card-body">
-                            <h2><i class="fas fa-chart-line me-2"></i>Results & Insights</h2>
+                                    <div class="progress-container">
+                                        <svg class="progress-ring">
+                                            <circle class="progress-ring-circle" cx="70" cy="70" r="60" />
+                                            <circle class="progress-ring progress" cx="70" cy="70" r="60" />
+                                        </svg>
 
-                            <!-- Category Filters -->
-                            <div id="categoryFilters" class="mt-3">
-                                <h3><i class="fas fa-filter me-2"></i>Filter Results</h3>
-                                <div class="row g-2">
-                                    <div class="col-12">
-                                        <h4 class="mb-2">By Category</h4>
-                                        <div class="btn-group d-flex flex-wrap gap-2" role="group">
-                                            <button type="button" class="btn category-btn active"
-                                                data-category="">All</button>
-                                            <button type="button" class="btn category-btn"
-                                                data-category="Frontend">Frontend</button>
-                                            <button type="button" class="btn category-btn"
-                                                data-category="Backend">Backend</button>
-                                            <button type="button" class="btn category-btn"
-                                                data-category="Full Stack">Full Stack</button>
-                                            <button type="button" class="btn category-btn"
-                                                data-category="Mobile">Mobile</button>
-                                            <button type="button" class="btn category-btn"
-                                                data-category="AIML">AI/ML</button>
-                                            <button type="button" class="btn category-btn"
-                                                data-category="Testing">Testing</button>
-                                            <button type="button" class="btn category-btn"
-                                                data-category="Cloud Engineer">Cloud</button>
-                                            <button type="button" class="btn category-btn"
-                                                data-category="DevOps">DevOps</button>
-                                            <button type="button" class="btn category-btn"
-                                                data-category="HR">HR</button>
-                                            <button type="button" class="btn category-btn"
-                                                data-category="Uncategorized">Uncategorized</button>
+                                        <div class="progress-content">
+                                            <div class="progress-icons">
+                                                <i class="fas fa-file-alt progress-icon"></i>
+                                                <i class="fas fa-search progress-icon"></i>
+                                                <i class="fas fa-chart-line progress-icon"></i>
+                                            </div>
+                                            <div class="progress-text">Analyzing...</div>
                                         </div>
                                     </div>
 
-                                    <div class="col-md-6">
-                                        <h4 class="mb-2"><i class="fas fa-percentage me-1"></i>By Match Percentage</h4>
-                                        <select id="percentageThreshold" class="form-select">
-                                            <option value="0">All Results</option>
-                                            <option value="70">>= 70%</option>
-                                            <option value="80">>= 80%</option>
-                                            <option value="90">>= 90%</option>
-                                        </select>
+                                    <p id="timeRemaining">
+                                        <i class="fas fa-clock"></i>
+                                        <span>Estimated time: <strong>~10s</strong></span>
+                                    </p>
+                                </div>
+                                <div id="results" class="results mb-4"></div>
+
+                                <!-- Visualization -->
+                                <div id="visualization" class="mt-3">
+                                    <h3><i class="fas fa-chart-pie me-2"></i>Category Distribution</h3>
+                                    <div class="row">
+                                        <div class="col-md-6"><canvas id="pieChart"></canvas></div>
+                                        <div class="col-md-6"><canvas id="barChart"></canvas></div>
                                     </div>
                                 </div>
                             </div>
-                            <div id="loader" style="display: none;">
-                                <div class="loader-header">
-                                    <i class="fas fa-spinner fa-spin"></i>
-                                    <h3>Processing Resumes</h3>
-                                </div>
-
-                                <div class="progress-container">
-                                    <svg class="progress-ring">
-                                        <circle class="progress-ring-circle" cx="70" cy="70" r="60" />
-                                        <circle class="progress-ring progress" cx="70" cy="70" r="60" />
-                                    </svg>
-
-                                    <div class="progress-content">
-                                        <div class="progress-icons">
-                                            <i class="fas fa-file-alt progress-icon"></i>
-                                            <i class="fas fa-search progress-icon"></i>
-                                            <i class="fas fa-chart-line progress-icon"></i>
-                                        </div>
-                                        <div class="progress-text">Analyzing...</div>
-                                    </div>
-                                </div>
-
-                                <p id="timeRemaining">
-                                    <i class="fas fa-clock"></i>
-                                    <span>Estimated time: <strong>~10s</strong></span>
-                                </p>
-                            </div>
-                            <div id="results" class="results mb-4"></div>
-
-                            <!-- Visualization -->
-                            <div id="visualization" class="mt-3">
-                                <h3><i class="fas fa-chart-pie me-2"></i>Category Distribution</h3>
-                                <div class="row">
-                                    <div class="col-md-6"><canvas id="pieChart"></canvas></div>
-                                    <div class="col-md-6"><canvas id="barChart"></canvas></div>
-                                </div>
-                            </div>
-                        </div>
-                    </section>
+                        </section>
+                    </div>
                 </div>
             </div>
         </div>
@@ -317,4 +370,5 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papa.min.js"></script>
     <script src="/static/script.js"></script>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'93437dcd580a17ff',t:'MTc0NTMwNzgxOS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
 </html>
