@@ -440,6 +440,19 @@ textarea.form-control {
   position: relative;
   overflow: hidden;
 }
+.btn1 {
+  /* border-radius: 20px; */
+  padding: 8px 20px;
+  font-weight: 500;
+  text-transform: uppercase;
+  transition: all var(--transition-speed);
+  font-size: 0.9rem;
+  animation: fadeIn 1s ease-out;
+  will-change: transform, box-shadow;
+  position: relative;
+  overflow: hidden;
+}
+
 
 .btn::after {
   content: '';
@@ -656,6 +669,8 @@ textarea.form-control {
 /* Category Filters */
 #categoryFilters .btn-group {
   gap: 0.5rem;
+  display: grid;
+  grid-template-columns: auto auto auto auto;
 }
 
 .category-btn {
@@ -664,7 +679,7 @@ textarea.form-control {
   border: none;
   padding: 8px 16px;
   font-size: 0.85rem;
-  border-radius: 20px;
+  /* border-radius: 20px; */
   transition: all var(--transition-speed);
   will-change: transform, background;
 }
