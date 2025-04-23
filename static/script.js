@@ -78,7 +78,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const viewFilesButton = form.querySelector('#viewFilesButton');
 
         summarizeButton.onclick = () => {
-            // Sync forms before submission
             syncForms(form, form === initialForm ? fullForm : initialForm);
             submitForm('summarize', form);
         };
@@ -89,7 +88,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 alert('Please provide a job description to perform percentage match.');
                 return;
             }
-            // Sync forms before submission
             syncForms(form, form === initialForm ? fullForm : initialForm);
             submitForm('match', form);
         };
@@ -110,7 +108,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 if (response.data.job_description) {
                     form.querySelector('#jobDescription').value = response.data.job_description;
-                    // Sync to the other form
                     syncForms(form, form === initialForm ? fullForm : initialForm);
                 } else {
                     alert("Failed to generate JD. Try again.");
@@ -126,7 +123,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
         fileInput.addEventListener('change', () => {
             updateFileDisplay(fileInput, fileCount, viewFilesButton);
-            // Sync to the other form
             syncForms(form, form === initialForm ? fullForm : initialForm);
         });
 
@@ -145,7 +141,6 @@ document.addEventListener('DOMContentLoaded', () => {
             const files = e.dataTransfer.files;
             fileInput.files = files;
             updateFileDisplay(fileInput, fileCount, viewFilesButton);
-            // Sync to the other form
             syncForms(form, form === initialForm ? fullForm : initialForm);
         });
 
@@ -168,12 +163,17 @@ let currentAction = '';
 let currentDisplayCategory = '';
 let countdownInterval;
 let pieChart, barChart;
+let progressInterval;
 
 const submitForm = async (action, form) => {
     const formData = new FormData(form);
     formData.append('action', action);
     currentAction = action;
 
+    const isInitialForm = form.id === 'resumeForm';
+    const initialProgress = document.getElementById('initialProgress');
+    const initialProgressBar = document.getElementById('initialProgressBar');
+    const initialProgressText = document.getElementById('initialProgressText');
     const loader = document.getElementById('loader');
     const timeRemainingElement = document.getElementById('timeRemaining');
     const resultsDiv = document.getElementById('results');
@@ -185,7 +185,16 @@ const submitForm = async (action, form) => {
     const initialSection = document.getElementById('initial-section');
     const fullInterface = document.getElementById('full-interface');
 
-    loader.style.display = 'block';
+    // Show progress bar for initial form, loader for full form
+    if (isInitialForm && initialProgress && initialProgressBar && initialProgressText) {
+        initialProgress.style.display = 'block';
+        initialProgressBar.style.width = '0%';
+        initialProgressBar.setAttribute('aria-valuenow', '0');
+        initialProgressText.textContent = 'Processing resumes...';
+    } else {
+        loader.style.display = 'block';
+    }
+
     downloadCsvButton.style.display = 'none';
     downloadFilteredCsvButton.style.display = 'none';
     shortlistButton.style.display = 'none';
@@ -195,6 +204,21 @@ const submitForm = async (action, form) => {
 
     const numberOfResumes = formData.getAll('resumes').length;
     let estimatedTime = action === 'summarize' ? numberOfResumes * 5 : numberOfResumes * 4;
+
+    // Animate progress bar for initial form
+    if (isInitialForm && initialProgress && initialProgressBar) {
+        let progress = 0;
+        const increment = 100 / (estimatedTime * 1000 / 50); // Update every 50ms
+        progressInterval = setInterval(() => {
+            progress = Math.min(progress + increment, 100);
+            initialProgressBar.style.width = `${progress}%`;
+            initialProgressBar.setAttribute('aria-valuenow', progress.toFixed(0));
+            if (progress >= 100) {
+                clearInterval(progressInterval);
+                initialProgressText.textContent = 'Finalizing...';
+            }
+        }, 50);
+    }
 
     startCountdown(estimatedTime);
 
@@ -232,13 +256,17 @@ const submitForm = async (action, form) => {
         const errorMessage = err.response?.data?.error || 'Error processing resumes. Please try again.';
         alert(errorMessage);
     } finally {
+        // Clean up
+        if (isInitialForm && initialProgress) {
+            initialProgress.style.display = 'none';
+            clearInterval(progressInterval);
+        }
         loader.style.display = 'none';
         clearInterval(countdownInterval);
         timeRemainingElement.innerHTML = 'Processing complete!';
     }
 };
 
-// ... (rest of the functions like updateFileDisplay, updateModalFileList, etc., remain unchanged)
 const startCountdown = (timeInSeconds) => {
     let timeLeft = timeInSeconds;
     const timeRemainingElement = document.getElementById('timeRemaining');
