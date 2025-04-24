@@ -880,3 +880,48 @@ footer a:hover {
     padding: 0 0.5rem;
   }
 }
+
+/* Bubble Background Effect */
+main {
+  position: relative;
+  overflow: hidden ;
+  background: #ffffff; /* Dark background to match hero section and make bubbles visible */
+}
+
+#bubbleCanvas {
+  display: block;
+  width: 100%;
+  height: calc(100% + 50vh); /* Extend canvas to cover main and part of hero section */
+  position: absolute;
+  top: calc(-50vh + 15px); /* Align with air3 wave (bottom: 15px in hero section) */
+  left: 0;
+  z-index: 1; /* Behind content but above background */
+}
+
+.container-fluid {
+  position: relative;
+  z-index: 2; /* Ensure content is above canvas */
+}
+
+/* Optional: Instructions text for hover effect (commented out unless needed) */
+
+.instructions {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-family: 'Work Sans', sans-serif;
+  font-weight: 500;
+  font-size: 20px;
+  color: #fff;
+  border: 3px solid #fff;
+  border-radius: 6px;
+  padding: 8px;
+  z-index: 3;
+  opacity: 0.8;
+  transition: opacity var(--transition-speed);
+}
+
+.instructions:hover {
+  opacity: 1;
+}
