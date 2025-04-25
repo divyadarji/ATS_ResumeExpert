@@ -900,7 +900,7 @@ main {
 
 .container-fluid {
   position: relative;
-  z-index: 2; /* Ensure content is above canvas */
+  z-index: 1005; /* Ensure content is above canvas */
 }
 
 /* Optional: Instructions text for hover effect (commented out unless needed) */
