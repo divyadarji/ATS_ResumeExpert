@@ -925,3 +925,123 @@ main {
 .instructions:hover {
   opacity: 1;
 }
+
+/* Media Queries for Small Screen Sizes */
+
+/* Medium Screens (≤991px) - Navbar Toggle and Dropdown */
+@media (max-width: 991px) {
+  .navbar {
+    height: auto; /* Allow dynamic height for dropdown */
+    padding: var(--spacing-sm) 0; /* Reduce padding */
+  }
+
+  .navbar-brand {
+    font-size: 1rem; /* Ensure brand fits */
+    padding: 0.2rem 0.6rem;
+  }
+
+  .navbar-collapse {
+    position: absolute; /* Position dropdown absolutely */
+    top: 100%; /* Below navbar */
+    left: 0;
+    width: 100%; /* Full width dropdown */
+    background: var(--gradient-primary); /* Match navbar background */
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); /* Add shadow for separation */
+    padding: var(--spacing-sm); /* Add internal padding */
+    display: none; /* Hidden by default */
+  }
+
+  .navbar-collapse.show {
+    display: flex; /* Show on toggle */
+    flex-direction: column; /* Stack links vertically */
+    align-items: center; /* Center align links */
+    animation: slideDownExpand 0.2s ease-out forwards; /* Keep animation */
+  }
+
+  .navbar-nav {
+    flex-direction: column; /* Stack nav items vertically */
+    width: 100%;
+  }
+
+  .nav-link {
+    color: var(--text-light);
+    font-size: 0.9rem; /* Adjust font size for mobile */
+    padding: 0.5rem 1rem; /* Increase padding for touch targets */
+    text-align: center; /* Center text */
+    width: 100%; /* Full width for each link */
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1); /* Separator */
+  }
+
+  .nav-link:last-child {
+    border-bottom: none; /* Remove bottom border from last link */
+  }
+
+  .nav-link:hover, .nav-link.active {
+    color: var(--accent-color);
+    transform: translateY(-2px); /* Keep hover effect */
+    background: rgba(255, 255, 255, 0.1); /* Highlight on hover */
+  }
+
+  .navbar-toggler {
+    padding: 0.4rem; /* Adjust toggle button padding */
+    font-size: 1rem;
+  }
+}
+
+/* Small Screens (≤767px) - Further Adjustments */
+@media (max-width: 767px) {
+  .navbar-brand {
+    font-size: 0.9rem; /* Smaller brand text */
+    padding: 0.15rem 0.5rem;
+  }
+
+  .nav-link {
+    font-size: 0.85rem; /* Smaller link text */
+    padding: 0.4rem 0.8rem; /* Adjust padding for smaller screens */
+  }
+
+  .navbar-collapse {
+    padding: var(--spacing-sm) 0.5rem; /* Reduce padding */
+  }
+}
+
+/* Extra Small Screens (≤576px) - Minimal Adjustments */
+@media (max-width: 576px) {
+  .navbar-brand {
+    font-size: 0.85rem; /* Even smaller brand text */
+    padding: 0.1rem 0.4rem;
+  }
+
+  .nav-link {
+    font-size: 0.8rem; /* Smallest link text */
+    padding: 0.3rem 0.6rem; /* Minimal padding */
+  }
+
+  .navbar-collapse {
+    padding: var(--spacing-sm) 0.3rem; /* Minimal padding */
+  }
+  .category-btn{
+    padding: 1px;
+    font-size: 11px;
+  }
+  #visulization canvas{
+    display: block;
+    box-sizing: border-box;
+    height: 250px;
+    width: 250px;
+  }
+  .list-group-item{
+    display: grid;
+    /* grid-template-columns: 180px 1fr; */
+    gap: 10px;
+    justify-content: space-around
+  }
+  .dropzone{
+    padding: 2px;
+  }
+  #generateJD{
+  
+      font-size: 10px;
+      padding: 10px;
+  }
+}
