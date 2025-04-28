@@ -309,7 +309,7 @@ body {
 }
 
 #initial-section .card {
-  max-width: 600px;
+  /* max-width: 600px; */
   width: 100%;
   margin: 0 auto;
   border: none;
