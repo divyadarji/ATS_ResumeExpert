@@ -1045,3 +1045,26 @@ main {
       padding: 10px;
   }
 }
+
+.file-preview {
+  display: none;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.file-preview-item {
+  text-align: center;
+  width: 120px;
+}
+
+.file-preview-item img {
+  max-width: 100px;
+  max-height: 100px;
+}
+
+.file-preview-item p {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-top: 5px;
+}   

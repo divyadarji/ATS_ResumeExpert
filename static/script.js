@@ -15,7 +15,6 @@ document.addEventListener('DOMContentLoaded', () => {
         lastScroll = currentScroll;
     });
 
-    // Prevent rapid touch events on mobile
     let isToggling = false;
     navbarToggler.addEventListener('touchstart', (event) => {
         event.preventDefault();
@@ -26,7 +25,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // Close navbar on nav link click only on mobile
     navLinks.forEach(link => {
         link.addEventListener('click', () => {
             if (navbarCollapse.classList.contains('show') && !isToggling && window.innerWidth <= 991) {
@@ -38,13 +36,11 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    // Initialize form elements
     const initialForm = document.getElementById('resumeForm');
     const fullForm = document.getElementById('resumeFormFull');
     const initialSection = document.getElementById('initial-section');
     const fullInterface = document.getElementById('full-interface');
 
-    // Sync form inputs between initial and full forms
     const syncForms = (sourceForm, targetForm) => {
         const sourceJobRole = sourceForm.querySelector('#jobRole').value;
         const sourceJobDescription = sourceForm.querySelector('#jobDescription').value;
@@ -53,29 +49,24 @@ document.addEventListener('DOMContentLoaded', () => {
         targetForm.querySelector('#jobRole').value = sourceJobRole;
         targetForm.querySelector('#jobDescription').value = sourceJobDescription;
 
-        // Update file input and UI for target form
         const targetFileInput = targetForm.querySelector('#resumes');
-        const targetFileCount = targetForm.querySelector('#file-count');
-        const targetViewFilesButton = targetForm.querySelector('#viewFilesButton');
-
-        // Create a new DataTransfer to assign files
         const dataTransfer = new DataTransfer();
         Array.from(sourceResumes).forEach(file => dataTransfer.items.add(file));
         targetFileInput.files = dataTransfer.files;
 
-        // Update file display for target form
-        updateFileDisplay(targetFileInput, targetFileCount, targetViewFilesButton);
+        const targetFileCount = targetForm.querySelector('.file-count');
+        const targetViewFilesButton = targetForm.querySelector('.view-files-button');
+        updateFileDisplay(targetFileInput, targetFileCount, targetViewFilesButton, targetForm);
     };
 
-    // Attach event listeners to both forms
     [initialForm, fullForm].forEach(form => {
         const summarizeButton = form.querySelector('#summarizeButton');
         const matchButton = form.querySelector('#matchButton');
         const generateJDButton = form.querySelector('#generateJD');
         const dropzone = form.querySelector('#dropzone');
         const fileInput = form.querySelector('#resumes');
-        const fileCount = form.querySelector('#file-count');
-        const viewFilesButton = form.querySelector('#viewFilesButton');
+        const fileCount = form.querySelector('.file-count');
+        const viewFilesButton = form.querySelector('.view-files-button');
 
         summarizeButton.onclick = () => {
             syncForms(form, form === initialForm ? fullForm : initialForm);
@@ -122,7 +113,7 @@ document.addEventListener('DOMContentLoaded', () => {
         dropzone.addEventListener('click', () => fileInput.click());
 
         fileInput.addEventListener('change', () => {
-            updateFileDisplay(fileInput, fileCount, viewFilesButton);
+            updateFileDisplay(fileInput, fileCount, viewFilesButton, form);
             syncForms(form, form === initialForm ? fullForm : initialForm);
         });
 
@@ -140,7 +131,7 @@ document.addEventListener('DOMContentLoaded', () => {
             dropzone.classList.remove('dragover');
             const files = e.dataTransfer.files;
             fileInput.files = files;
-            updateFileDisplay(fileInput, fileCount, viewFilesButton);
+            updateFileDisplay(fileInput, fileCount, viewFilesButton, form);
             syncForms(form, form === initialForm ? fullForm : initialForm);
         });
 
@@ -185,7 +176,6 @@ const submitForm = async (action, form) => {
     const initialSection = document.getElementById('initial-section');
     const fullInterface = document.getElementById('full-interface');
 
-    // Show progress bar for initial form, loader for full form
     if (isInitialForm && initialProgress && initialProgressBar && initialProgressText) {
         initialProgress.style.display = 'block';
         initialProgressBar.style.width = '0%';
@@ -205,10 +195,9 @@ const submitForm = async (action, form) => {
     const numberOfResumes = formData.getAll('resumes').length;
     let estimatedTime = action === 'summarize' ? numberOfResumes * 5 : numberOfResumes * 4;
 
-    // Animate progress bar for initial form
     if (isInitialForm && initialProgress && initialProgressBar) {
         let progress = 0;
-        const increment = 100 / (estimatedTime * 1000 / 50); // Update every 50ms
+        const increment = 100 / (estimatedTime * 1000 / 50);
         progressInterval = setInterval(() => {
             progress = Math.min(progress + increment, 100);
             initialProgressBar.style.width = `${progress}%`;
@@ -227,7 +216,6 @@ const submitForm = async (action, form) => {
             headers: { 'Content-Type': 'multipart/form-data' },
         });
 
-        // Show full interface
         initialSection.style.display = 'none';
         fullInterface.style.display = 'block';
 
@@ -256,7 +244,6 @@ const submitForm = async (action, form) => {
         const errorMessage = err.response?.data?.error || 'Error processing resumes. Please try again.';
         alert(errorMessage);
     } finally {
-        // Clean up
         if (isInitialForm && initialProgress) {
             initialProgress.style.display = 'none';
             clearInterval(progressInterval);
@@ -563,10 +550,52 @@ shortlistButton.onclick = async () => {
     }
 };
 
-const updateFileDisplay = (fileInput, fileCount, viewFilesButton) => {
+const updateFileDisplay = (fileInput, fileCount, viewFilesButton, form) => {
     const files = fileInput.files;
     fileCount.textContent = `${files.length} file${files.length !== 1 ? 's' : ''} selected`;
-    viewFilesButton.style.display = files.length > 0 ? 'inline-block' : 'none';
+    const filePreview = form.querySelector('.file-preview');
+
+    if (files.length >= 1 && files.length <= 3) {
+        filePreview.style.display = 'flex';
+        viewFilesButton.style.display = 'none';
+        filePreview.innerHTML = '';
+        Array.from(files).forEach(file => {
+            const previewItem = document.createElement('div');
+            previewItem.className = 'file-preview-item';
+            if (file.type.startsWith('image/')) {
+                const img = document.createElement('img');
+                img.style.maxWidth = '100px';
+                img.style.maxHeight = '100px';
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    img.src = e.target.result;
+                };
+                reader.readAsDataURL(file);
+                previewItem.appendChild(img);
+            } else {
+                let iconClass;
+                if (file.name.toLowerCase().endsWith('.pdf')) {
+                    iconClass = 'fa-file-pdf';
+                } else if (file.name.toLowerCase().endsWith('.docx')) {
+                    iconClass = 'fa-file-word';
+                } else if (file.name.toLowerCase().endsWith('.txt')) {
+                    iconClass = 'fa-file-alt';
+                } else {
+                    iconClass = 'fa-file';
+                }
+                const icon = document.createElement('i');
+                icon.className = `fas ${iconClass} fa-2x`;
+                previewItem.appendChild(icon);
+            }
+            const fileName = document.createElement('p');
+            fileName.textContent = file.name;
+            previewItem.appendChild(fileName);
+            filePreview.appendChild(previewItem);
+        });
+    } else {
+        filePreview.style.display = 'none';
+        viewFilesButton.style.display = files.length > 0 ? 'inline-block' : 'none';
+    }
 };
 
 const updateModalFileList = (fileInput) => {
@@ -597,7 +626,11 @@ const updateModalFileList = (fileInput) => {
                 if (i !== index) dataTransfer.items.add(file);
             });
             fileInput.files = dataTransfer.files;
-            updateFileDisplay(fileInput, document.getElementById('file-count'), document.getElementById('viewFilesButton'));
+            const form = fileInput.closest('form');
+            const fileCount = form.querySelector('.file-count');
+            const viewFilesButton = form.querySelector('.view-files-button');
+            updateFileDisplay(fileInput, fileCount, viewFilesButton, form);
+            syncForms(form, form === initialForm ? fullForm : initialForm);
             updateModalFileList(fileInput);
             modalFileList.focus();
         };
@@ -705,17 +738,15 @@ const displayCharts = () => {
     });
 };
 
-
 // Bubble Background Effect
 document.addEventListener('DOMContentLoaded', () => {
     const canvas = document.getElementById('bubbleCanvas');
-    if (!canvas) return; // Exit if canvas is not found
-  
-    // Set canvas size
+    if (!canvas) return;
+
     const mainSection = document.querySelector('main');
     const heroSection = document.querySelector('.hero-section');
     canvas.width = document.body.clientWidth;
-    canvas.height = mainSection.offsetHeight + heroSection.offsetHeight; // Cover main and hero sections
+    canvas.height = mainSection.offsetHeight + heroSection.offsetHeight;
     const ctx = canvas.getContext('2d');
     let bubbles = [];
     const bubbleCount = 20;
@@ -723,202 +754,192 @@ document.addEventListener('DOMContentLoaded', () => {
     const popLines = 6;
     const popDistance = 40;
     let mouseOffset = { x: 0, y: 0 };
-  
-    // Bubble Constructor
+
     function createBubble() {
-      this.position = { x: 0, y: 0 };
-      this.radius = 8 + Math.random() * 6;
-      this.xOff = Math.random() * canvas.width - this.radius;
-      this.yOff = Math.random() * (canvas.height - heroSection.offsetHeight) + heroSection.offsetHeight; // Start at hero section bottom
-      this.distanceBetweenWaves = 50 + Math.random() * 40;
-      this.count = canvas.height + this.yOff - heroSection.offsetHeight + 15; // Align with air3 (bottom: 15px)
-      this.color = '#8bc9ee';
-      this.lines = [];
-      this.popping = false;
-      this.maxRotation = 85;
-      this.rotation = Math.floor(Math.random() * (this.maxRotation - (this.maxRotation * -1))) + (this.maxRotation * -1);
-      this.rotationDirection = 'forward';
-  
-      // Populate Lines
-      for (let i = 0; i < popLines; i++) {
-        const tempLine = new createLine();
-        tempLine.bubble = this;
-        tempLine.index = i;
-        this.lines.push(tempLine);
-      }
-  
-      this.resetPosition = function () {
         this.position = { x: 0, y: 0 };
         this.radius = 8 + Math.random() * 6;
         this.xOff = Math.random() * canvas.width - this.radius;
         this.yOff = Math.random() * (canvas.height - heroSection.offsetHeight) + heroSection.offsetHeight;
         this.distanceBetweenWaves = 50 + Math.random() * 40;
         this.count = canvas.height + this.yOff - heroSection.offsetHeight + 15;
+        this.color = '#8bc9ee';
+        this.lines = [];
         this.popping = false;
-      };
-  
-      this.render = function () {
-        if (this.rotationDirection === 'forward') {
-          if (this.rotation < this.maxRotation) {
-            this.rotation++;
-          } else {
-            this.rotationDirection = 'backward';
-          }
-        } else {
-          if (this.rotation > this.maxRotation * -1) {
-            this.rotation--;
-          } else {
-            this.rotationDirection = 'forward';
-          }
+        this.maxRotation = 85;
+        this.rotation = Math.floor(Math.random() * (this.maxRotation - (this.maxRotation * -1))) + (this.maxRotation * -1);
+        this.rotationDirection = 'forward';
+
+        for (let i = 0; i < popLines; i++) {
+            const tempLine = new createLine();
+            tempLine.bubble = this;
+            tempLine.index = i;
+            this.lines.push(tempLine);
         }
-  
-        ctx.save();
-        ctx.translate(this.position.x, this.position.y);
-        ctx.rotate((this.rotation * Math.PI) / 180);
-  
-        if (!this.popping) {
-          ctx.beginPath();
-          ctx.strokeStyle = '#8bc9ee';
-          ctx.lineWidth = 1;
-          ctx.arc(0, 0, this.radius - 3, 0, Math.PI * 1.5, true);
-          ctx.stroke();
-  
-          ctx.beginPath();
-          ctx.arc(0, 0, this.radius, 0, Math.PI * 2, false);
-          ctx.stroke();
-        }
-  
-        ctx.restore();
-  
-        // Draw the lines
-        for (let a = 0; a < this.lines.length; a++) {
-          if (this.lines[a].popping) {
-            if (this.lines[a].lineLength < popDistance && !this.lines[a].inversePop) {
-              this.lines[a].popDistance += 0.06;
+
+        this.resetPosition = function () {
+            this.position = { x: 0, y: 0 };
+            this.radius = 8 + Math.random() * 6;
+            this.xOff = Math.random() * canvas.width - this.radius;
+            this.yOff = Math.random() * (canvas.height - heroSection.offsetHeight) + heroSection.offsetHeight;
+            this.distanceBetweenWaves = 50 + Math.random() * 40;
+            this.count = canvas.height + this.yOff - heroSection.offsetHeight + 15;
+            this.popping = false;
+        };
+
+        this.render = function () {
+            if (this.rotationDirection === 'forward') {
+                if (this.rotation < this.maxRotation) {
+                    this.rotation++;
+                } else {
+                    this.rotationDirection = 'backward';
+                }
             } else {
-              if (this.lines[a].popDistance >= 0) {
-                this.lines[a].inversePop = true;
-                this.lines[a].popDistanceReturn += 1;
-                this.lines[a].popDistance -= 0.03;
-              } else {
-                this.lines[a].resetValues();
-                this.resetPosition();
-              }
+                if (this.rotation > this.maxRotation * -1) {
+                    this.rotation--;
+                } else {
+                    this.rotationDirection = 'forward';
+                }
             }
-  
-            this.lines[a].updateValues();
-            this.lines[a].render();
-          }
-        }
-      };
+
+            ctx.save();
+            ctx.translate(this.position.x, this.position.y);
+            ctx.rotate((this.rotation * Math.PI) / 180);
+
+            if (!this.popping) {
+                ctx.beginPath();
+                ctx.strokeStyle = '#8bc9ee';
+                ctx.lineWidth = 1;
+                ctx.arc(0, 0, this.radius - 3, 0, Math.PI * 1.5, true);
+                ctx.stroke();
+
+                ctx.beginPath();
+                ctx.arc(0, 0, this.radius, 0, Math.PI * 2, false);
+                ctx.stroke();
+            }
+
+            ctx.restore();
+
+            for (let a = 0; a < this.lines.length; a++) {
+                if (this.lines[a].popping) {
+                    if (this.lines[a].lineLength < popDistance && !this.lines[a].inversePop) {
+                        this.lines[a].popDistance += 0.06;
+                    } else {
+                        if (this.lines[a].popDistance >= 0) {
+                            this.lines[a].inversePop = true;
+                            this.lines[a].popDistanceReturn += 1;
+                            this.lines[a].popDistance -= 0.03;
+                        } else {
+                            this.lines[a].resetValues();
+                            this.resetPosition();
+                        }
+                    }
+
+                    this.lines[a].updateValues();
+                    this.lines[a].render();
+                }
+            }
+        };
     }
-  
-    // Line Constructor
+
     function createLine() {
-      this.lineLength = 0;
-      this.popDistance = 0;
-      this.popDistanceReturn = 0;
-      this.inversePop = false;
-      this.popping = false;
-  
-      this.resetValues = function () {
         this.lineLength = 0;
         this.popDistance = 0;
         this.popDistanceReturn = 0;
         this.inversePop = false;
         this.popping = false;
-        this.updateValues();
-      };
-  
-      this.updateValues = function () {
-        this.x = this.bubble.position.x + (this.bubble.radius + this.popDistanceReturn) * Math.cos((2 * Math.PI * this.index) / this.bubble.lines.length);
-        this.y = this.bubble.position.y + (this.bubble.radius + this.popDistanceReturn) * Math.sin((2 * Math.PI * this.index) / this.bubble.lines.length);
-        this.lineLength = this.bubble.radius * this.popDistance;
-        this.endX = this.lineLength;
-        this.endY = this.lineLength;
-      };
-  
-      this.render = function () {
-        this.updateValues();
-        ctx.beginPath();
-        ctx.strokeStyle = '#8bc9ee';
-        ctx.lineWidth = 2;
-        ctx.moveTo(this.x, this.y);
-        if (this.x < this.bubble.position.x) {
-          this.endX = this.lineLength * -1;
-        }
-        if (this.y < this.bubble.position.y) {
-          this.endY = this.lineLength * -1;
-        }
-        if (this.y === this.bubble.position.y) {
-          this.endY = 0;
-        }
-        if (this.x === this.bubble.position.x) {
-          this.endX = 0;
-        }
-        ctx.lineTo(this.x + this.endX, this.y + this.endY);
-        ctx.stroke();
-      };
+
+        this.resetValues = function () {
+            this.lineLength = 0;
+            this.popDistance = 0;
+            this.popDistanceReturn = 0;
+            this.inversePop = false;
+            this.popping = false;
+            this.updateValues();
+        };
+
+        this.updateValues = function () {
+            this.x = this.bubble.position.x + (this.bubble.radius + this.popDistanceReturn) * Math.cos((2 * Math.PI * this.index) / this.bubble.lines.length);
+            this.y = this.bubble.position.y + (this.bubble.radius + this.popDistanceReturn) * Math.sin((2 * Math.PI * this.index) / this.bubble.lines.length);
+            this.lineLength = this.bubble.radius * this.popDistance;
+            this.endX = this.lineLength;
+            this.endY = this.lineLength;
+        };
+
+        this.render = function () {
+            this.updateValues();
+            ctx.beginPath();
+            ctx.strokeStyle = '#8bc9ee';
+            ctx.lineWidth = 2;
+            ctx.moveTo(this.x, this.y);
+            if (this.x < this.bubble.position.x) {
+                this.endX = this.lineLength * -1;
+            }
+            if (this.y < this.bubble.position.y) {
+                this.endY = this.lineLength * -1;
+            }
+            if (this.y === this.bubble.position.y) {
+                this.endY = 0;
+            }
+            if (this.x === this.bubble.position.x) {
+                this.endX = 0;
+            }
+            ctx.lineTo(this.x + this.endX, this.y + this.endY);
+            ctx.stroke();
+        };
     }
-  
-    // Populate Bubbles
+
     for (let i = 0; i < bubbleCount; i++) {
-      const tempBubble = new createBubble();
-      bubbles.push(tempBubble);
+        const tempBubble = new createBubble();
+        bubbles.push(tempBubble);
     }
-  
-    // Animation Loop
+
     function animate() {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-  
-      // Draw Bubbles
-      ctx.beginPath();
-      for (let i = 0; i < bubbles.length; i++) {
-        bubbles[i].position.x = Math.sin(bubbles[i].count / bubbles[i].distanceBetweenWaves) * 50 + bubbles[i].xOff;
-        bubbles[i].position.y = bubbles[i].count;
-        bubbles[i].render();
-  
-        if (bubbles[i].count < heroSection.offsetHeight - bubbles[i].radius) {
-          bubbles[i].count = canvas.height - heroSection.offsetHeight + 15; // Reset to air3 level
-        } else {
-          bubbles[i].count -= bubbleSpeed;
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        ctx.beginPath();
+        for (let i = 0; i < bubbles.length; i++) {
+            bubbles[i].position.x = Math.sin(bubbles[i].count / bubbles[i].distanceBetweenWaves) * 50 + bubbles[i].xOff;
+            bubbles[i].position.y = bubbles[i].count;
+            bubbles[i].render();
+
+            if (bubbles[i].count < heroSection.offsetHeight - bubbles[i].radius) {
+                bubbles[i].count = canvas.height - heroSection.offsetHeight + 15;
+            } else {
+                bubbles[i].count -= bubbleSpeed;
+            }
         }
-      }
-  
-      // On Bubble Hover
-      for (let i = 0; i < bubbles.length; i++) {
-        const bubbleRect = canvas.getBoundingClientRect();
-        const adjustedMouseX = mouseOffset.x;
-        const adjustedMouseY = mouseOffset.y - bubbleRect.top; // Adjust for canvas position
-        if (
-          adjustedMouseX > bubbles[i].position.x - bubbles[i].radius &&
-          adjustedMouseX < bubbles[i].position.x + bubbles[i].radius &&
-          adjustedMouseY > bubbles[i].position.y - bubbles[i].radius &&
-          adjustedMouseY < bubbles[i].position.y + bubbles[i].radius
-        ) {
-          for (let a = 0; a < bubbles[i].lines.length; a++) {
-            bubbles[i].lines[a].popping = true;
-            bubbles[i].popping = true;
-          }
+
+        for (let i = 0; i < bubbles.length; i++) {
+            const bubbleRect = canvas.getBoundingClientRect();
+            const adjustedMouseX = mouseOffset.x;
+            const adjustedMouseY = mouseOffset.y - bubbleRect.top;
+            if (
+                adjustedMouseX > bubbles[i].position.x - bubbles[i].radius &&
+                adjustedMouseX < bubbles[i].position.x + bubbles[i].radius &&
+                adjustedMouseY > bubbles[i].position.y - bubbles[i].radius &&
+                adjustedMouseY < bubbles[i].position.y + bubbles[i].radius
+            ) {
+                for (let a = 0; a < bubbles[i].lines.length; a++) {
+                    bubbles[i].lines[a].popping = true;
+                    bubbles[i].popping = true;
+                }
+            }
         }
-      }
-  
-      window.requestAnimationFrame(animate);
+
+        window.requestAnimationFrame(animate);
     }
-  
-    // Start Animation
+
     window.requestAnimationFrame(animate);
-  
-    // Event Listeners
+
     canvas.addEventListener('mousemove', (e) => {
-      const rect = canvas.getBoundingClientRect();
-      mouseOffset.x = e.clientX - rect.left;
-      mouseOffset.y = e.clientY - rect.top;
+        const rect = canvas.getBoundingClientRect();
+        mouseOffset.x = e.clientX - rect.left;
+        mouseOffset.y = e.clientY - rect.top;
     });
-  
+
     window.addEventListener('resize', () => {
-      canvas.width = document.body.clientWidth;
-      canvas.height = mainSection.offsetHeight + heroSection.offsetHeight;
-      bubbles.forEach(bubble => bubble.resetPosition());
+        canvas.width = document.body.clientWidth;
+        canvas.height = mainSection.offsetHeight + heroSection.offsetHeight;
+        bubbles.forEach(bubble => bubble.resetPosition());
     });
-  });
+});

@@ -95,10 +95,11 @@
                                         <p id="dropzone-text">Drag & drop files (PDF, DOCX, TXT, PNG, JPG, JPEG)</p>
                                         <input type="file" id="resumes" name="resumes" accept=".pdf,.docx,.txt,.png,.jpg,.jpeg" multiple style="display: none;">
                                     </div>
-                                    <small id="file-count" class="text-muted d-block mt-2"></small>
-                                    <button type="button" class="btn btn-secondary mt-2" id="viewFilesButton" style="display: none;">
+                                    <small class="file-count text-muted d-block mt-2"></small>
+                                    <button type="button" class="btn btn-secondary mt-2 view-files-button" style="display: none;">
                                         <i class="fas fa-eye me-1"></i>View Files
                                     </button>
+                                    <div class="file-preview mt-2" style="display: none;"></div>
                                 </div>
 
                                 <div class="text-center mt-3">
@@ -154,10 +155,11 @@
                                             <p id="dropzone-text">Drag & drop files (PDF, DOCX, TXT, PNG, JPG, JPEG)</p>
                                             <input type="file" id="resumes" name="resumes" accept=".pdf,.docx,.txt,.png,.jpg,.jpeg" multiple style="display: none;">
                                         </div>
-                                        <small id="file-count" class="text-muted d-block mt-2"></small>
-                                        <button type="button" class="btn btn-secondary mt-2" id="viewFilesButton" style="display: none;">
+                                        <small class="file-count text-muted d-block mt-2"></small>
+                                        <button type="button" class="btn btn-secondary mt-2 view-files-button" style="display: none;">
                                             <i class="fas fa-eye me-1"></i>View Files
                                         </button>
+                                        <div class="file-preview mt-2" style="display: none;"></div>
                                     </div>
 
                                     <div class="text-center mt-3">
@@ -379,5 +381,5 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papa.min.js"></script>
     <script src="/static/script.js"></script>
-</body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'937536b6cfbbb0c4',t:'MTc0NTgyOTE5NS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
