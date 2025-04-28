@@ -20,6 +20,15 @@
     <link rel="icon" type="image/png" sizes="192x192" href="/static/images/favicon-192x192.png">
     <link rel="icon" type="image/png" sizes="512x512" href="/static/images/favicon-512x512.png">
     <meta name="msapplication-TileImage" content="/static/images/ms-icon-144x144.png">
+    <style>
+        .list-group-item i {
+            font-size: 24px;
+            color: #1E3A8A;
+        }
+        .list-group-item p {
+            margin-bottom: 0;
+        }
+    </style>
 </head>
 
 <body>
@@ -67,7 +76,46 @@
         <div class="container-fluid">
             <!-- Initial Analyze Resumes Section -->
             <div id="initial-section" class="row justify-content-center">
-                <div class="col-lg-6 col-md-8 col-sm-10">
+                <div class="col-12 col-md-6 col-lg-5">
+                    <div class="card h-100">
+                        <div class="card-body">
+                            <h2>Welcome to Resume Expert</h2>
+                            <p>Resume Expert is an AI-powered tool designed to help you analyze and match resumes efficiently. Whether you're a recruiter or a job seeker, our platform provides insightful analysis to streamline your hiring process or improve your resume.</p>
+                            <h3>How It Works</h3>
+                            <ul class="list-group">
+                                <li class="list-group-item d-flex align-items-center">
+                                    <i class="fas fa-upload me-3"></i>
+                                    <div>
+                                        <strong>Step 1: Upload Resumes</strong>
+                                        <p>Upload one or multiple resumes in various formats (PDF, DOCX, TXT, PNG, JPG, JPEG).</p>
+                                    </div>
+                                </li>
+                                <li class="list-group-item d-flex align-items-center">
+                                    <i class="fas fa-briefcase me-3"></i>
+                                    <div>
+                                        <strong>Step 2: Enter Job Details</strong>
+                                        <p>Provide the job role and description to tailor the analysis.</p>
+                                    </div>
+                                </li>
+                                <li class="list-group-item d-flex align-items-center">
+                                    <i class="fas fa-tasks me-3"></i>
+                                    <div>
+                                        <strong>Step 3: Choose Analysis Type</strong>
+                                        <p>Select 'Summarize' for a detailed overview or 'Match' to see how well resumes fit the job description.</p>
+                                    </div>
+                                </li>
+                                <li class="list-group-item d-flex align-items-center">
+                                    <i class="fas fa-chart-line me-3"></i>
+                                    <div>
+                                        <strong>Step 4: Review Results</strong>
+                                        <p>Explore the analysis results, filter by categories, and download reports as needed.</p>
+                                    </div>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-12 col-md-6 col-lg-5">
                     <section id="upload-section" class="card h-100">
                         <div class="card-body">
                             <h2><i class="fas fa-upload me-2"></i>Analyze Resumes</h2>
@@ -85,7 +133,7 @@
 
                                 <div class="mb-3">
                                     <label for="jobDescription" class="form-label">Job Description</label>
-                                    <textarea class="form-control" id="jobDescription" name="job_description" rows="3"
+                                    <textarea class="form-control" id="jobDescription" name="job_description" rows="15"
                                         placeholder="Enter or generate a job description..."></textarea>
                                 </div>
 
@@ -121,6 +169,7 @@
                         </div>
                     </section>
                 </div>
+
             </div>
 
             <!-- Full Interface (Hidden Initially) -->
@@ -145,7 +194,7 @@
 
                                     <div class="mb-3">
                                         <label for="jobDescription" class="form-label">Job Description</label>
-                                        <textarea class="form-control" id="jobDescription" name="job_description" rows="3"
+                                        <textarea class="form-control" id="jobDescription" name="job_description" rows="20"
                                             placeholder="Enter or generate a job description..."></textarea>
                                     </div>
 
@@ -317,7 +366,7 @@
                 <div class="modal-body">
                     <div class="category-checkbox-container">
                         <div class="row row-cols-2 g-2">
-                            <div class="form-check"><input type="checkbox" class="form-check-input category-checkbox" id="checkFrontend" value="Frontend"><label class="form-check-label" for="checkFrontend">Frontend</label></div>
+                            <div class="form-check"><input type="checkbox" tool class="form-check-input category-checkbox" id="checkFrontend" value="Frontend"><label class="form-check-label" for="checkFrontend">Frontend</label></div>
                             <div class="form-check"><input type="checkbox" class="form-check-input category-checkbox" id="checkBackend" value="Backend"><label class="form-check-label" for="checkBackend">Backend</label></div>
                             <div class="form-check"><input type="checkbox" class="form-check-input category-checkbox" id="checkFullStack" value="Full Stack"><label class="form-check-label" for="checkFullStack">Full Stack</label></div>
                             <div class="form-check"><input type="checkbox" class="form-check-input category-checkbox" id="checkMobile" value="Mobile"><label class="form-check-label" for="checkMobile">Mobile</label></div>
@@ -381,5 +430,6 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papa.min.js"></script>
     <script src="/static/script.js"></script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'937536b6cfbbb0c4',t:'MTc0NTgyOTE5NS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
-</html>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'937536b6cfbbb0c4',t:'MTc0NTgyOTE5NS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
+</body>
+</html> 
