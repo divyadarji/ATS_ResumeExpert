@@ -626,13 +626,33 @@ const updateModalFileList = (fileInput) => {
                 if (i !== index) dataTransfer.items.add(file);
             });
             fileInput.files = dataTransfer.files;
+            
+            // Get the form that contains this file input
             const form = fileInput.closest('form');
             const fileCount = form.querySelector('.file-count');
             const viewFilesButton = form.querySelector('.view-files-button');
+            const filePreview = form.querySelector('.file-preview');
+            
+            // Update all displays
             updateFileDisplay(fileInput, fileCount, viewFilesButton, form);
-            syncForms(form, form === initialForm ? fullForm : initialForm);
+            
+            // Also update the other form (initial/full) to keep them in sync
+            const otherForm = form.id === 'resumeForm' ? document.getElementById('resumeFormFull') : document.getElementById('resumeForm');
+            if (otherForm) {
+                const otherFileInput = otherForm.querySelector('#resumes');
+                const otherFileCount = otherForm.querySelector('.file-count');
+                const otherViewFilesButton = otherForm.querySelector('.view-files-button');
+                
+                // Sync the files to the other form
+                const otherDataTransfer = new DataTransfer();
+                Array.from(fileInput.files).forEach(file => otherDataTransfer.items.add(file));
+                otherFileInput.files = otherDataTransfer.files;
+                
+                updateFileDisplay(otherFileInput, otherFileCount, otherViewFilesButton, otherForm);
+            }
+            
+            // Update the modal list
             updateModalFileList(fileInput);
-            modalFileList.focus();
         };
     });
 };
