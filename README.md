@@ -1,5 +1,5 @@
 # 📝 ATS Resume Expert
-An AI-powered ATS Resume Expert that analyzes resumes against job descriptions, provides keyword optimization tips, and generates ATS-friendly improvements. Built with NLP, ML, and resume parsing to maximize chances of passing Applicant Tracking Systems.
+>An AI-powered ATS Resume Expert that analyzes resumes against job descriptions, provides keyword optimization tips, and generates ATS-friendly improvements. Built with NLP, ML, and resume parsing to maximize chances of passing Applicant Tracking Systems.
 ## 📌 Overview
 **ATS Resume Expert** is an AI-driven application that helps job seekers optimize their resumes for Applicant Tracking Systems (ATS). Using advanced Natural Language Processing (NLP) and Machine Learning models, it evaluates resumes against specific job descriptions, identifies missing keywords, and provides actionable recommendations to improve ATS scores and relevance.
 
